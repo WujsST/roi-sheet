@@ -1,36 +1,132 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ROI Sheet
 
-## Getting Started
+Aplikacja webowa do automatycznego monitorowania zwrotu z inwestycji (ROI) automatyzacji biznesowych. Pomaga agencjom automatyzacji i freelancerom śledzić oraz komunikować wartość ich pracy klientom.
 
-First, run the development server:
+## Główny przekaz
+
+> **"Ile tracisz BEZ automatyzacji"** - odwrócona perspektywa, która skuteczniej komunikuje wartość.
+
+## Tech Stack
+
+| Technologia | Wersja | Opis |
+|-------------|--------|------|
+| Next.js | 16.1.4 | Framework React z App Router |
+| React | 19.2.3 | Biblioteka UI |
+| TypeScript | 5.x | Typowanie statyczne |
+| Supabase | - | Backend (PostgreSQL + Auth) |
+| Tailwind CSS | 4.x | Styling |
+| Recharts | 3.x | Wykresy |
+| Framer Motion | 12.x | Animacje |
+| Lucide React | 0.563 | Ikony |
+
+## Funkcjonalności
+
+- **Dashboard** - Bento Grid z KPI (oszczędności, czas, efektywność)
+- **Monitoring automatyzacji** - Status healthy/error/paused
+- **Zarządzanie klientami** - Lista klientów z metrykami ROI
+- **Raporty** - Generowanie i podgląd raportów PDF
+- **System logów** - Monitoring działania systemu
+- **"Koszt bezczynności"** - Wizualizacja strat bez automatyzacji
+
+## Uruchomienie lokalne
 
 ```bash
+# Instalacja zależności
+npm install
+
+# Uruchomienie serwera developerskiego
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build produkcyjny
+npm run build
+
+# Uruchomienie produkcyjne
+npm run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Aplikacja będzie dostępna na `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Zmienne środowiskowe
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Utwórz plik `.env.local` w katalogu głównym:
 
-## Learn More
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://[project-id].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[anon-key]
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Struktura projektu
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+roi-sheet/
+├── app/                    # Next.js App Router
+│   ├── page.tsx           # Dashboard główny
+│   ├── layout.tsx         # Layout z Sidebar
+│   ├── actions.ts         # Server Actions (Supabase)
+│   ├── automations/       # Zarządzanie automatyzacjami
+│   ├── clients/           # Zarządzanie klientami
+│   ├── reports/           # Raporty i podgląd PDF
+│   ├── settings/          # Ustawienia
+│   └── logs/              # System logów
+├── components/            # Komponenty React
+│   ├── BentoGrid.tsx     # Layout Bento
+│   ├── StatCard.tsx      # Karty KPI
+│   ├── ChartCard.tsx     # Wykresy
+│   ├── Sidebar.tsx       # Nawigacja
+│   └── ...
+├── lib/
+│   ├── utils.ts          # Utility functions
+│   └── supabase/         # Konfiguracja Supabase
+│       ├── client.ts     # Browser client
+│       ├── server.ts     # Server client (SSR)
+│       └── types.ts      # TypeScript interfaces
+└── public/               # Statyczne zasoby
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Baza danych (Supabase)
 
-## Deploy on Vercel
+### Tabele
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Tabela | Opis |
+|--------|------|
+| `automations` | Automatyzacje i ich statusy |
+| `savings_history` | Historia oszczędności (wykres) |
+| `dashboard_stats` | Agregaty KPI |
+| `clients` | Klienci agencji |
+| `reports` | Wygenerowane raporty |
+| `system_logs` | Logi systemowe |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Design System
+
+**Motyw:** Dark Industrial Tech
+
+| Element | Wartość |
+|---------|---------|
+| Background | `#000000` (pure black) |
+| Cards | `#0a0a0a` (dark grey) |
+| Text Primary | `#ffffff` |
+| Text Muted | `#737373` |
+| Success | `#22c55e` (green) |
+| Warning | `#ef4444` (red) |
+| Accent | `#8b5cf6` (purple) |
+
+**Fonty:**
+- Display: Space Grotesk
+- Body: Inter
+
+## Deployment
+
+Aplikacja jest hostowana na Vercel z automatycznym CI/CD z GitHub.
+
+```bash
+# Deploy na Vercel
+vercel --prod
+```
+
+## Licencja
+
+MIT
+
+---
+
+Zbudowane z wykorzystaniem [Next.js](https://nextjs.org) i [Supabase](https://supabase.com).
