@@ -1,62 +1,19 @@
-"use client";
-
-import { Users, MoreHorizontal, TrendingUp, Zap, Building2, Plus, ArrowUpRight } from "lucide-react";
+import { Users, MoreHorizontal, TrendingUp, Zap, Building2, Plus, ArrowUpRight, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getClientsData } from "@/app/actions";
+import type { Client } from "@/lib/supabase/types";
 
-const clients = [
-  { 
-    id: 1, 
-    name: "TechCorp Sp. z o.o.", 
-    industry: "SaaS / IT", 
-    status: "active", 
-    automations: 5, 
-    saved: "12.5k PLN", 
-    roi: "+125%",
-    logo: "TC"
-  },
-  { 
-    id: 2, 
-    name: "LogisticsPro", 
-    industry: "Transport", 
-    status: "active", 
-    automations: 3, 
-    saved: "8.2k PLN", 
-    roi: "+95%",
-    logo: "LP"
-  },
-  { 
-    id: 3, 
-    name: "StartupHub", 
-    industry: "Venture Capital", 
-    status: "warning", 
-    automations: 2, 
-    saved: "1.5k PLN", 
-    roi: "+15%",
-    logo: "SH"
-  },
-  { 
-    id: 4, 
-    name: "GreenEnergy SA", 
-    industry: "Energy", 
-    status: "active", 
-    automations: 8, 
-    saved: "24.1k PLN", 
-    roi: "+210%",
-    logo: "GE"
-  },
-  { 
-    id: 5, 
-    name: "MediCare Plus", 
-    industry: "Healthcare", 
-    status: "inactive", 
-    automations: 0, 
-    saved: "0 PLN", 
-    roi: "0%",
-    logo: "MC"
-  },
-];
+export default async function ClientsPage() {
+  let clients: Client[] = [];
+  let error: Error | null = null;
 
-export default function ClientsPage() {
+  try {
+    clients = await getClientsData();
+  } catch (e) {
+    error = e as Error;
+    console.error('Error fetching clients:', e);
+  }
+
   return (
     <div className="space-y-8 pb-20">
       {/* Header */}
@@ -75,78 +32,103 @@ export default function ClientsPage() {
         </button>
       </div>
 
-      {/* Clients Grid */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {clients.map((client) => (
-          <div 
-            key={client.id} 
-            className="group relative flex flex-col justify-between rounded-3xl border border-white/10 bg-[#0a0a0a] p-6 transition-all hover:border-white/20 hover:bg-[#0f0f0f]"
-          >
-            {/* Card Header */}
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-lg font-bold text-white font-display">
-                  {client.logo}
-                </div>
-                <div>
-                  <h3 className="font-bold text-white font-display">{client.name}</h3>
-                  <p className="text-xs text-text-muted font-mono">{client.industry}</p>
-                </div>
-              </div>
-              <button className="text-text-muted hover:text-white transition-colors">
-                <MoreHorizontal className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Metrics */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-               <div className="rounded-xl border border-white/5 bg-black/40 p-3">
-                  <div className="text-[10px] font-mono text-text-muted uppercase tracking-wider mb-1">Oszczędności</div>
-                  <div className="text-lg font-bold text-white font-display">{client.saved}</div>
-               </div>
-               <div className="rounded-xl border border-white/5 bg-black/40 p-3">
-                  <div className="text-[10px] font-mono text-text-muted uppercase tracking-wider mb-1">ROI</div>
-                  <div className="text-lg font-bold text-brand-success font-display flex items-center gap-1">
-                    {client.roi} <ArrowUpRight className="h-3 w-3" />
-                  </div>
-               </div>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-4">
-               <div className="flex items-center gap-2 text-xs font-mono text-text-muted">
-                 <Zap className="h-3 w-3" />
-                 {client.automations} procesów
-               </div>
-               
-               <div className={cn(
-                 "flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider border",
-                 client.status === "active" ? "border-green-500/30 bg-green-500/10 text-green-500" :
-                 client.status === "warning" ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-500" :
-                 "border-gray-500/30 bg-gray-500/10 text-gray-500"
-               )}>
-                 <div className={cn(
-                   "h-1.5 w-1.5 rounded-full",
-                   client.status === "active" ? "bg-green-500 animate-pulse" :
-                   client.status === "warning" ? "bg-yellow-500" :
-                   "bg-gray-500"
-                 )}></div>
-                 {client.status === "active" ? "Aktywny" : client.status === "warning" ? "Ryzyko" : "Nieaktywny"}
-               </div>
+      {/* Error State */}
+      {error && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
+          <div className="flex items-center gap-3 text-red-400">
+            <AlertCircle className="h-5 w-5" />
+            <div>
+              <p className="font-bold">Błąd ładowania danych</p>
+              <p className="text-sm text-red-400/70">{error.message}</p>
             </div>
           </div>
-        ))}
+        </div>
+      )}
 
-        {/* Add Client Placeholder Card */}
-        <button className="group flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-white/10 bg-transparent p-6 transition-all hover:border-white/30 hover:bg-white/5 min-h-[240px]">
-           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/5 text-white/50 group-hover:bg-white/10 group-hover:text-white transition-colors">
-              <Plus className="h-6 w-6" />
-           </div>
-           <span className="text-sm font-bold text-text-muted font-mono uppercase tracking-widest group-hover:text-white">
-             Dodaj Nowego Klienta
-           </span>
-        </button>
-      </div>
+      {/* Loading/Empty State */}
+      {!error && clients.length === 0 && (
+        <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-12 text-center">
+          <Users className="h-12 w-12 text-text-muted mx-auto mb-4" />
+          <p className="text-text-muted font-mono">Brak klientów do wyświetlenia</p>
+        </div>
+      )}
+
+      {/* Clients Grid */}
+      {!error && clients.length > 0 && (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {clients.map((client) => (
+            <div
+              key={client.id}
+              className="group relative flex flex-col justify-between rounded-3xl border border-white/10 bg-[#0a0a0a] p-6 transition-all hover:border-white/20 hover:bg-[#0f0f0f]"
+            >
+              {/* Card Header */}
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-lg font-bold text-white font-display">
+                    {client.logo}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white font-display">{client.name}</h3>
+                    <p className="text-xs text-text-muted font-mono">{client.industry}</p>
+                  </div>
+                </div>
+                <button className="text-text-muted hover:text-white transition-colors">
+                  <MoreHorizontal className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Metrics */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                 <div className="rounded-xl border border-white/5 bg-black/40 p-3">
+                    <div className="text-[10px] font-mono text-text-muted uppercase tracking-wider mb-1">Oszczędności</div>
+                    <div className="text-lg font-bold text-white font-display">
+                      {client.saved_amount.toLocaleString('pl-PL')} PLN
+                    </div>
+                 </div>
+                 <div className="rounded-xl border border-white/5 bg-black/40 p-3">
+                    <div className="text-[10px] font-mono text-text-muted uppercase tracking-wider mb-1">ROI</div>
+                    <div className="text-lg font-bold text-brand-success font-display flex items-center gap-1">
+                      +{client.roi_percentage}% <ArrowUpRight className="h-3 w-3" />
+                    </div>
+                 </div>
+              </div>
+
+              {/* Footer */}
+              <div className="mt-auto flex items-center justify-between border-t border-white/5 pt-4">
+                 <div className="flex items-center gap-2 text-xs font-mono text-text-muted">
+                   <Zap className="h-3 w-3" />
+                   {client.automations_count} procesów
+                 </div>
+
+                 <div className={cn(
+                   "flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider border",
+                   client.status === "active" ? "border-green-500/30 bg-green-500/10 text-green-500" :
+                   client.status === "warning" ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-500" :
+                   "border-gray-500/30 bg-gray-500/10 text-gray-500"
+                 )}>
+                   <div className={cn(
+                     "h-1.5 w-1.5 rounded-full",
+                     client.status === "active" ? "bg-green-500 animate-pulse" :
+                     client.status === "warning" ? "bg-yellow-500" :
+                     "bg-gray-500"
+                   )}></div>
+                   {client.status === "active" ? "Aktywny" : client.status === "warning" ? "Ryzyko" : "Nieaktywny"}
+                 </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Add Client Placeholder Card */}
+          <button className="group flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-white/10 bg-transparent p-6 transition-all hover:border-white/30 hover:bg-white/5 min-h-[240px]">
+             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/5 text-white/50 group-hover:bg-white/10 group-hover:text-white transition-colors">
+                <Plus className="h-6 w-6" />
+             </div>
+             <span className="text-sm font-bold text-text-muted font-mono uppercase tracking-widest group-hover:text-white">
+               Dodaj Nowego Klienta
+             </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
