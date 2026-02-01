@@ -1,7 +1,12 @@
-import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap } from "lucide-react";
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getAutomationsData } from "@/app/actions";
-import type { Automation } from "@/lib/supabase/types";
+import { getAutomationsData, getClientsData } from "@/app/actions";
+import type { Automation, Client } from "@/lib/supabase/types";
+import { AddAutomationModal } from "@/components/modals/AddAutomationModal"
 
 // Icon mapping helper
 const getIconComponent = (iconName: string) => {
@@ -10,21 +15,39 @@ const getIconComponent = (iconName: string) => {
     FileText,
     UserPlus,
     Workflow,
-    Zap
+    Zap,
+    Calendar,
+    Database,
+    Globe,
+    Settings,
+    Bell
   };
   return icons[iconName] || Workflow;
 };
 
-export default async function AutomationsPage() {
-  let automations: Automation[] = [];
-  let error: Error | null = null;
+export default function AutomationsPage() {
+  const router = useRouter()
+  const [automations, setAutomations] = useState<Automation[]>([])
+  const [clients, setClients] = useState<Client[]>([])
+  const [error, setError] = useState<Error | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  try {
-    automations = await getAutomationsData();
-  } catch (e) {
-    error = e as Error;
-    console.error('Error fetching automations:', e);
-  }
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [automationsData, clientsData] = await Promise.all([
+          getAutomationsData(),
+          getClientsData()
+        ])
+        setAutomations(automationsData)
+        setClients(clientsData)
+      } catch (e) {
+        setError(e as Error)
+        console.error('Error fetching data:', e)
+      }
+    }
+    fetchData()
+  }, [])
 
   return (
     <div className="space-y-8 pb-20">
@@ -53,7 +76,10 @@ export default async function AutomationsPage() {
           <button className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#0f0f0f] text-text-muted hover:text-white hover:bg-white/5 transition-colors">
             <Filter className="h-4 w-4" />
           </button>
-          <button className="flex items-center gap-2 rounded-full bg-white px-6 py-2 text-sm font-bold text-black hover:bg-gray-200 transition-colors font-mono uppercase tracking-wide">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 rounded-full bg-white px-6 py-2 text-sm font-bold text-black hover:bg-gray-200 transition-colors font-mono uppercase tracking-wide"
+          >
              <Play className="h-3 w-3 fill-current" /> Nowy Proces
           </button>
         </div>
@@ -166,6 +192,17 @@ export default async function AutomationsPage() {
           })}
         </div>
       )}
+
+      <AddAutomationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => {
+          // Refresh data
+          getAutomationsData().then(setAutomations)
+          router.refresh()
+        }}
+        availableClients={clients}
+      />
     </div>
   );
 }

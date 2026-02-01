@@ -1,18 +1,36 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Users, MoreHorizontal, TrendingUp, Zap, Building2, Plus, ArrowUpRight, AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { getClientsData } from "@/app/actions";
-import type { Client } from "@/lib/supabase/types";
+import { cn, formatCurrency } from "@/lib/utils";
+import { getClientsData, getAutomationsData } from "@/app/actions";
+import type { Client, Automation } from "@/lib/supabase/types";
+import { AddClientModal } from "@/components/modals/AddClientModal"
 
-export default async function ClientsPage() {
-  let clients: Client[] = [];
-  let error: Error | null = null;
+export default function ClientsPage() {
+  const router = useRouter()
+  const [clients, setClients] = useState<Client[]>([])
+  const [automations, setAutomations] = useState<Automation[]>([])
+  const [error, setError] = useState<Error | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  try {
-    clients = await getClientsData();
-  } catch (e) {
-    error = e as Error;
-    console.error('Error fetching clients:', e);
-  }
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [clientsData, automationsData] = await Promise.all([
+          getClientsData(),
+          getAutomationsData()
+        ])
+        setClients(clientsData)
+        setAutomations(automationsData)
+      } catch (e) {
+        setError(e as Error)
+        console.error('Error fetching data:', e)
+      }
+    }
+    fetchData()
+  }, [])
 
   return (
     <div className="space-y-8 pb-20">
@@ -27,7 +45,10 @@ export default async function ClientsPage() {
             Zarządzaj portfelem klientów i monitoruj ich wyniki
           </p>
         </div>
-        <button className="flex items-center gap-2 rounded-full bg-white px-6 py-2 text-sm font-bold text-black hover:bg-gray-200 transition-colors font-mono uppercase tracking-wide">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 rounded-full bg-white px-6 py-2 text-sm font-bold text-black hover:bg-gray-200 transition-colors font-mono uppercase tracking-wide"
+        >
           <Plus className="h-4 w-4" /> Dodaj Klienta
         </button>
       </div>
@@ -82,7 +103,7 @@ export default async function ClientsPage() {
                  <div className="rounded-xl border border-white/5 bg-black/40 p-3">
                     <div className="text-[10px] font-mono text-text-muted uppercase tracking-wider mb-1">Oszczędności</div>
                     <div className="text-lg font-bold text-white font-display">
-                      {client.saved_amount.toLocaleString('pl-PL')} PLN
+                      {formatCurrency(client.saved_amount)} PLN
                     </div>
                  </div>
                  <div className="rounded-xl border border-white/5 bg-black/40 p-3">
@@ -119,7 +140,10 @@ export default async function ClientsPage() {
           ))}
 
           {/* Add Client Placeholder Card */}
-          <button className="group flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-white/10 bg-transparent p-6 transition-all hover:border-white/30 hover:bg-white/5 min-h-[240px]">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="group flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-white/10 bg-transparent p-6 transition-all hover:border-white/30 hover:bg-white/5 min-h-[240px]"
+          >
              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/5 text-white/50 group-hover:bg-white/10 group-hover:text-white transition-colors">
                 <Plus className="h-6 w-6" />
              </div>
@@ -129,6 +153,17 @@ export default async function ClientsPage() {
           </button>
         </div>
       )}
+
+      <AddClientModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => {
+          // Refresh data
+          getClientsData().then(setClients)
+          router.refresh()
+        }}
+        availableAutomations={automations}
+      />
     </div>
   );
 }

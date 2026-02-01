@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, User, Lock, Plug, Bell, Save } from "lucide-react";
+import { Settings, User, Lock, Bell, Save } from "lucide-react";
 
 export default function SettingsPage() {
   return (
@@ -45,32 +45,6 @@ export default function SettingsPage() {
                    <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Email</label>
                    <input type="email" defaultValue="dawid@roisheet.com" className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors" />
                 </div>
-             </div>
-          </div>
-        </section>
-
-        {/* Integrations Section */}
-        <section className="rounded-3xl border border-white/10 bg-[#0a0a0a] p-8">
-          <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
-             <Plug className="h-5 w-5 text-white" />
-             <h2 className="text-lg font-bold text-white font-display">Integracje API</h2>
-          </div>
-          
-          <div className="space-y-6">
-             <div>
-                <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Supabase URL</label>
-                <div className="flex gap-2">
-                   <input type="text" defaultValue="https://xyz.supabase.co" className="flex-1 rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white font-mono text-sm outline-none focus:border-brand-accent transition-colors" />
-                   <div className="flex items-center px-4 rounded-xl border border-green-500/20 bg-green-500/10 text-green-500 text-xs font-bold uppercase tracking-wider">Connected</div>
-                </div>
-             </div>
-             <div>
-                <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Supabase Anon Key</label>
-                <input type="password" defaultValue="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-text-muted font-mono text-sm outline-none focus:border-brand-accent transition-colors" />
-             </div>
-             <div>
-                <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">n8n Webhook Base URL</label>
-                <input type="text" placeholder="https://n8n.your-agency.com/webhook" className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors" />
              </div>
           </div>
         </section>

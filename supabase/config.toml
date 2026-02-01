@@ -1,0 +1,9 @@
+# Supabase Configuration for ROI Sheet
+# Project ID: jzwsavttpkijccxliplr
+
+[project]
+id = "jzwsavttpkijccxliplr"
+name = "P13-Bento-Sheets"
+
+[db]
+major_version = 15

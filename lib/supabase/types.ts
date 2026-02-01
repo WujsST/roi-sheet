@@ -6,6 +6,8 @@ export interface Automation {
   icon: string
   status: 'healthy' | 'error' | 'paused'
   saved_today: number
+  workflow_id: string | null
+  hourly_rate: number
   created_at: string
 }
 
@@ -79,6 +81,7 @@ export interface ComputedDashboardStats {
   inaction_cost: number
   active_automations: number
   total_executions_today: number
+  total_savings_all_clients: number
 }
 
 // Monthly Savings (for chart visualization)

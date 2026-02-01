@@ -1,4 +1,8 @@
+'use server'
+
 import { createClient } from '@/lib/supabase/server'
+import { clientSchema, automationSchema } from '@/lib/validations'
+import { revalidatePath } from 'next/cache'
 import type {
   Automation,
   SavingsHistory,
@@ -71,11 +75,12 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
   const supabase = await createClient()
 
   // Call PostgreSQL RPC functions in parallel
-  const [savingsData, timeSavedData, efficiencyData, inactionData] = await Promise.all([
+  const [savingsData, timeSavedData, efficiencyData, inactionData, allClientsSavings] = await Promise.all([
     supabase.rpc('get_monthly_total_savings'),
     supabase.rpc('get_monthly_time_saved'),
     supabase.rpc('get_monthly_efficiency'),
-    supabase.rpc('get_inaction_cost')
+    supabase.rpc('get_inaction_cost'),
+    supabase.rpc('get_all_clients_total_savings')
   ])
 
   // Additional metrics
@@ -95,7 +100,8 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
     efficiency_score: efficiencyData.data?.[0]?.efficiency_score ?? 0,
     inaction_cost: inactionData.data?.[0]?.inaction_cost ?? 0,
     active_automations: activeAutomations ?? 0,
-    total_executions_today: todayExecutions ?? 0
+    total_executions_today: todayExecutions ?? 0,
+    total_savings_all_clients: allClientsSavings.data?.[0]?.total_savings_all_clients ?? 0
   }
 }
 
@@ -118,4 +124,97 @@ export async function getWorkflowExecutions(limit = 100): Promise<WorkflowExecut
     .limit(limit)
 
   return (data || []) as WorkflowExecution[]
+}
+
+// === CLIENT MANAGEMENT ===
+
+export async function createNewClient(data: {
+  name: string
+  industry: string
+  logo: string
+  automationIds: string[]
+}) {
+  const supabase = await createClient()
+
+  // Validate with Zod
+  const validated = clientSchema.parse(data)
+
+  // Insert client
+  const { data: client, error } = await supabase
+    .from('clients')
+    .insert({
+      name: validated.name,
+      industry: validated.industry || '',
+      logo: validated.logo,
+      status: 'active',
+      automations_count: validated.automationIds.length,
+      roi_percentage: 0,
+      saved_amount: 0
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  // Update automations to link with client
+  if (validated.automationIds.length > 0) {
+    await supabase
+      .from('automations')
+      .update({ client_id: client.id })
+      .in('id', validated.automationIds)
+  }
+
+  revalidatePath('/clients')
+  return client
+}
+
+// === AUTOMATION MANAGEMENT ===
+
+export async function createNewAutomation(data: {
+  name: string
+  icon: string
+  hourlyRate: number
+  workflowId: string
+  clientIds: string[]
+}) {
+  const supabase = await createClient()
+
+  // Validate with Zod
+  const validated = automationSchema.parse(data)
+
+  // Create automation for each client
+  const automations = validated.clientIds.map(clientId => ({
+    name: validated.name,
+    icon: validated.icon,
+    hourly_rate: validated.hourlyRate,
+    workflow_id: validated.workflowId,
+    client_id: clientId,
+    client_name: '', // Will be filled by database trigger or view
+    status: 'healthy' as const,
+    saved_today: 0
+  }))
+
+  const { data: result, error } = await supabase
+    .from('automations')
+    .insert(automations)
+    .select()
+
+  if (error) throw error
+
+  // Update client automation counts
+  for (const clientId of validated.clientIds) {
+    const { count } = await supabase
+      .from('automations')
+      .select('*', { count: 'exact', head: true })
+      .eq('client_id', clientId)
+
+    await supabase
+      .from('clients')
+      .update({ automations_count: count || 0 })
+      .eq('id', clientId)
+  }
+
+  revalidatePath('/automations')
+  revalidatePath('/clients')
+  return result
 }

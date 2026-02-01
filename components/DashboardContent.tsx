@@ -6,9 +6,10 @@ import { ChartCard } from "@/components/ChartCard";
 import { AutomationList } from "@/components/AutomationList";
 import { AutomationConfiguratorWidget } from "@/components/AutomationConfiguratorWidget";
 import { ReportPreviewWidget } from "@/components/ReportPreviewWidget";
-import { Wallet, Clock, Zap, AlertTriangle } from "lucide-react";
+import { Wallet, Clock, Zap, AlertTriangle, Users } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import type { Automation, MonthlySavings, ComputedDashboardStats } from "@/lib/supabase/types";
+import { formatCurrency } from "@/lib/utils";
 
 interface DashboardContentProps {
   automations: Automation[];
@@ -30,13 +31,6 @@ export function DashboardContent({ automations, savingsHistory, stats }: Dashboa
   const efficiencyScore = stats.efficiency_score;
   const inactionCost = stats.inaction_cost;
 
-  const formatSavings = (value: number) => {
-    if (value >= 1000) {
-      return `${(value / 1000).toFixed(1)}k`;
-    }
-    return value.toString();
-  };
-
   return (
     <BentoGrid>
       <AnimatePresence>
@@ -44,7 +38,7 @@ export function DashboardContent({ automations, savingsHistory, stats }: Dashboa
         <BentoItem key="hero" className="col-span-1 min-h-[280px]">
           <StatCard
             title="Oszczędności"
-            value={formatSavings(totalSavings)}
+            value={formatCurrency(totalSavings)}
             subValue="PLN Saved"
             variant="green"
             icon={Wallet}
@@ -79,11 +73,21 @@ export function DashboardContent({ automations, savingsHistory, stats }: Dashboa
         <BentoItem key="alert" className="col-span-1 min-h-[280px] border-red-500/20 bg-red-950/5">
           <StatCard
             title="Koszt Braku Działania"
-            value={`${inactionCost.toLocaleString()} PLN`}
+            value={`${formatCurrency(inactionCost)} PLN`}
             subValueLabel="/msc"
             variant="alert"
             icon={AlertTriangle}
             actionLabel="Zidentyfikuj Luki"
+          />
+        </BentoItem>
+
+        <BentoItem key="all-clients-savings" className="col-span-1 min-h-[280px]">
+          <StatCard
+            title="Wszyscy Klienci"
+            value={formatCurrency(stats.total_savings_all_clients)}
+            subValue="Total PLN"
+            variant="green"
+            icon={Users}
           />
         </BentoItem>
 

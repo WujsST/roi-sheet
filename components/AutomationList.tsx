@@ -1,7 +1,7 @@
 "use client";
 
 import { Mail, FileText, UserPlus, AlertCircle, Zap, Send, RefreshCw, LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { Automation } from "@/lib/supabase/types";
 
 const iconMap: Record<string, LucideIcon> = {
@@ -57,7 +57,7 @@ export function AutomationList({ automations }: AutomationListProps) {
               <div className="text-right">
                 {item.status === "healthy" ? (
                   <>
-                    <div className="text-sm font-bold text-brand-success font-mono">{Number(item.saved_today)} PLN</div>
+                    <div className="text-sm font-bold text-brand-success font-mono">{formatCurrency(item.saved_today)} PLN</div>
                     <div className="text-[10px] text-text-muted font-mono uppercase">Saved today</div>
                   </>
                 ) : item.status === "paused" ? (

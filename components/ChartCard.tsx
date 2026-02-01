@@ -2,6 +2,7 @@
 
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip } from "recharts";
 import type { MonthlySavings } from "@/lib/supabase/types";
+import { formatCurrency } from "@/lib/utils";
 
 interface ChartCardProps {
   data?: MonthlySavings[];
@@ -22,7 +23,7 @@ export function ChartCard({ data }: ChartCardProps) {
   }));
 
   const lastValue = chartData[chartData.length - 1]?.saved ?? 0;
-  const formatValue = (val: number) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val.toString();
+
   return (
     <div className="flex h-full flex-col p-8 relative overflow-hidden">
       <div className="mb-8 z-10">
@@ -72,7 +73,7 @@ export function ChartCard({ data }: ChartCardProps) {
       
       {/* Label for last bar */}
       <div className="absolute right-8 top-1/2 bg-white text-black text-xs font-bold px-2 py-1 rounded shadow-lg font-mono">
-        {formatValue(lastValue)}
+        {formatCurrency(lastValue)} PLN
       </div>
     </div>
   );
