@@ -35,12 +35,18 @@ export function UnnamedWorkflowAlert() {
         try {
             await updateAutomationName(currentWorkflow.id, name.trim())
 
-            // Move to next unnamed workflow or close
-            if (currentIndex < unnamedWorkflows.length - 1) {
-                setCurrentIndex(currentIndex + 1)
-                setName("")
-            } else {
+            // Remove the named workflow from the list
+            const updatedWorkflows = unnamedWorkflows.filter((_, index) => index !== currentIndex)
+            setUnnamedWorkflows(updatedWorkflows)
+            setName("")
+
+            // If no more workflows, close the modal
+            if (updatedWorkflows.length === 0) {
                 setIsVisible(false)
+            }
+            // If current index is now out of bounds, adjust it
+            else if (currentIndex >= updatedWorkflows.length) {
+                setCurrentIndex(updatedWorkflows.length - 1)
             }
         } catch (error) {
             console.error("Error updating name:", error)
