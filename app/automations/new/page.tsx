@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Stepper } from "@/components/Stepper";
-import { Copy, Mail, Database, Bot, ArrowRight, ArrowLeft } from "lucide-react";
+import { Copy, Mail, Database, Bot, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { createNewAutomation, getClientsData } from "@/app/actions";
+import type { Client } from "@/lib/supabase/types";
 
 const steps = ["Info", "Benchmark", "Wartość", "Integracja"];
 
@@ -16,13 +19,63 @@ const categories = [
 ];
 
 export default function NewAutomationPage() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [workflowId, setWorkflowId] = useState("");
+
   const [formData, setFormData] = useState({
     name: "",
     client: "",
     category: "",
     hourlyRate: 100,
   });
+
+  useEffect(() => {
+    // Generate random workflow ID on mount
+    setWorkflowId(`wh_${Math.random().toString(36).substring(2, 11)}`);
+
+    // Fetch clients
+    getClientsData().then(data => {
+      setClients(data);
+      if (data.length > 0) {
+        setFormData(prev => ({ ...prev, client: data[0].id }));
+      }
+    });
+  }, []);
+
+  const handleActivate = async () => {
+    if (!formData.name || !formData.client || !formData.category) {
+      alert("Proszę uzupełnić wszystkie pola (Nazwa, Kategoria, Klient)");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Map category to icon
+      const iconMap: Record<string, string> = {
+        email: 'Mail',
+        data: 'Database',
+        support: 'Bot'
+      };
+
+      await createNewAutomation({
+        name: formData.name,
+        icon: iconMap[formData.category] || 'Zap',
+        hourlyRate: formData.hourlyRate,
+        workflowId: workflowId,
+        clientIds: [formData.client]
+      });
+
+      router.push('/automations');
+    } catch (error) {
+      console.error(error);
+      alert("Wystąpił błąd podczas tworzenia automatyzacji.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
@@ -82,18 +135,6 @@ export default function NewAutomationPage() {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="mb-3 block text-sm font-bold text-white uppercase tracking-wider">Klient</label>
-                  <select
-                    className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all appearance-none font-mono"
-                    value={formData.client}
-                    onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-                  >
-                    <option value="" className="bg-black text-gray-400">Wybierz klienta...</option>
-                    <option value="acme" className="bg-black">TechCorp Sp. z o.o.</option>
-                    <option value="stark" className="bg-black">StartupHub</option>
-                  </select>
-                </div>
               </div>
             )}
 
@@ -151,20 +192,23 @@ export default function NewAutomationPage() {
                 <div className="rounded-xl border border-brand-accent/30 bg-brand-accent/10 p-6 flex gap-4">
                   <Bot className="h-6 w-6 text-brand-accent shrink-0" />
                   <div>
-                     <h3 className="mb-1 font-bold text-white">Webhook Integration</h3>
-                     <p className="text-sm text-text-muted leading-relaxed">
-                        Skopiuj ten adres URL i wklej go do swojego workflow w n8n jako Webhook Trigger.
-                     </p>
+                    <h3 className="mb-1 font-bold text-white">Webhook Integration</h3>
+                    <p className="text-sm text-text-muted leading-relaxed">
+                      Skopiuj ten adres URL i wklej go do swojego workflow w n8n jako Webhook Trigger.
+                    </p>
                   </div>
                 </div>
-                
+
                 <div className="relative">
                   <label className="mb-2 block text-xs uppercase tracking-wide text-text-muted font-bold">Webhook URL</label>
                   <div className="flex items-center gap-3">
                     <code className="flex-1 rounded-xl border border-white/10 bg-black/50 px-5 py-4 text-sm text-brand-accent font-mono break-all shadow-inner">
-                      https://api.roisheet.com/v1/hooks/wh_123456789
+                      https://api.roisheet.com/v1/hooks/{workflowId || '...'}
                     </code>
-                    <button className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-4 text-white hover:bg-white hover:text-black hover:border-white transition-all">
+                    <button
+                      onClick={() => navigator.clipboard.writeText(`https://api.roisheet.com/v1/hooks/${workflowId}`)}
+                      className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-4 text-white hover:bg-white hover:text-black hover:border-white transition-all"
+                    >
                       <Copy className="h-5 w-5" />
                     </button>
                   </div>
@@ -185,8 +229,8 @@ export default function NewAutomationPage() {
           </button>
         ) : (
           <Link
-             href="/"
-             className="flex items-center gap-2 rounded-full px-6 py-3 font-medium text-text-muted hover:text-white hover:bg-white/5 transition-colors uppercase text-xs tracking-widest"
+            href="/"
+            className="flex items-center gap-2 rounded-full px-6 py-3 font-medium text-text-muted hover:text-white hover:bg-white/5 transition-colors uppercase text-xs tracking-widest"
           >
             Anuluj
           </Link>
@@ -200,12 +244,17 @@ export default function NewAutomationPage() {
             Dalej <ArrowRight className="h-4 w-4" />
           </button>
         ) : (
-          <Link
-            href="/"
-            className="flex items-center gap-2 rounded-full bg-brand-success text-black px-8 py-3 text-sm font-bold hover:bg-green-400 transition-colors"
+          <button
+            onClick={handleActivate}
+            disabled={isSubmitting}
+            className="flex items-center gap-2 rounded-full bg-brand-success text-black px-8 py-3 text-sm font-bold hover:bg-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Aktywuj <ArrowRight className="h-4 w-4" />
-          </Link>
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>Aktywuj <ArrowRight className="h-4 w-4" /></>
+            )}
+          </button>
         )}
       </div>
     </div>

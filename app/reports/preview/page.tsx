@@ -28,10 +28,8 @@ export default function ReportPreviewPage() {
     setIsGenerating(true);
     try {
       const canvas = await html2canvas(reportRef.current, {
-        scale: 2, // Higher resolution
         logging: false,
-        useCORS: true,
-        backgroundColor: "#ffffff"
+        useCORS: true
       });
 
       const imgData = canvas.toDataURL("image/png");

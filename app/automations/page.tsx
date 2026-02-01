@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell } from "lucide-react";
+import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAutomationsData, getClientsData } from "@/app/actions";
 import type { Automation, Client } from "@/lib/supabase/types";
@@ -20,7 +21,8 @@ const getIconComponent = (iconName: string) => {
     Database,
     Globe,
     Settings,
-    Bell
+    Bell,
+    Bot
   };
   return icons[iconName] || Workflow;
 };
@@ -66,22 +68,22 @@ export default function AutomationsPage() {
         {/* Actions Bar */}
         <div className="flex gap-3">
           <div className="relative">
-             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-             <input
-               type="text"
-               placeholder="Szukaj..."
-               className="h-10 w-64 rounded-full border border-white/10 bg-[#0f0f0f] pl-10 pr-4 text-sm text-white focus:border-white/30 outline-none font-mono"
-             />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+            <input
+              type="text"
+              placeholder="Szukaj..."
+              className="h-10 w-64 rounded-full border border-white/10 bg-[#0f0f0f] pl-10 pr-4 text-sm text-white focus:border-white/30 outline-none font-mono"
+            />
           </div>
           <button className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#0f0f0f] text-text-muted hover:text-white hover:bg-white/5 transition-colors">
             <Filter className="h-4 w-4" />
           </button>
-          <button
-            onClick={() => setIsModalOpen(true)}
+          <Link
+            href="/automations/new"
             className="flex items-center gap-2 rounded-full bg-white px-6 py-2 text-sm font-bold text-black hover:bg-gray-200 transition-colors font-mono uppercase tracking-wide"
           >
-             <Play className="h-3 w-3 fill-current" /> Nowy Proces
-          </button>
+            <Play className="h-3 w-3 fill-current" /> Nowy Proces
+          </Link>
         </div>
       </div>
 
@@ -126,10 +128,10 @@ export default function AutomationsPage() {
                   <div>
                     <div className="font-bold text-white font-display text-lg tracking-tight mb-1">{item.name}</div>
                     <div className="flex items-center gap-3 text-xs font-mono text-text-muted">
-                       <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5">
-                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> {item.client_name}
-                       </span>
-                       <span>Utworzono: {new Date(item.created_at).toLocaleDateString('pl-PL')}</span>
+                      <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> {item.client_name}
+                      </span>
+                      <span>Utworzono: {new Date(item.created_at).toLocaleDateString('pl-PL')}</span>
                     </div>
                   </div>
                 </div>
@@ -138,20 +140,20 @@ export default function AutomationsPage() {
                 <div className="flex items-center gap-8">
                   {/* Health Bar (Mini) */}
                   <div className="hidden md:block w-32">
-                     <div className="flex justify-between text-[10px] font-mono text-text-muted mb-1 uppercase tracking-wider">
-                       <span>Health</span>
-                       <span>{uptimePercent > 0 ? `${uptimePercent}%` : '-'}</span>
-                     </div>
-                     <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
-                        <div
-                          className={cn("h-full rounded-full",
-                            item.status === "healthy" ? "bg-green-500" :
+                    <div className="flex justify-between text-[10px] font-mono text-text-muted mb-1 uppercase tracking-wider">
+                      <span>Health</span>
+                      <span>{uptimePercent > 0 ? `${uptimePercent}%` : '-'}</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full",
+                          item.status === "healthy" ? "bg-green-500" :
                             item.status === "error" ? "bg-red-500" :
-                            "bg-gray-500"
-                          )}
-                          style={{ width: `${uptimePercent}%` }}
-                        ></div>
-                     </div>
+                              "bg-gray-500"
+                        )}
+                        style={{ width: `${uptimePercent}%` }}
+                      ></div>
+                    </div>
                   </div>
 
                   {/* Status Badge */}
@@ -166,12 +168,12 @@ export default function AutomationsPage() {
                         </div>
                       </>
                     ) : item.status === "error" ? (
-                       <>
+                      <>
                         <div className="text-lg font-bold text-brand-warning flex items-center gap-1 justify-end font-display">
                           Error
                         </div>
                         <div className="text-[10px] text-brand-warning/70 font-mono uppercase tracking-wider flex items-center justify-end gap-1">
-                           <AlertCircle className="h-3 w-3" /> Check Logs
+                          <AlertCircle className="h-3 w-3" /> Check Logs
                         </div>
                       </>
                     ) : (
@@ -184,7 +186,7 @@ export default function AutomationsPage() {
 
                   {/* Menu */}
                   <button className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-white transition-colors">
-                     <MoreHorizontal className="h-5 w-5" />
+                    <MoreHorizontal className="h-5 w-5" />
                   </button>
                 </div>
               </div>
