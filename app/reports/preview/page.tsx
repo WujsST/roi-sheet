@@ -1,8 +1,11 @@
 "use client";
 
-import { Download, Printer, ArrowLeft } from "lucide-react";
+import { useRef, useState } from "react";
+import { Download, Printer, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const data = [
   { name: "Tydzień 1", saved: 1200 },
@@ -12,9 +15,48 @@ const data = [
 ];
 
 export default function ReportPreviewPage() {
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!reportRef.current) return;
+
+    setIsGenerating(true);
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2, // Higher resolution
+        logging: false,
+        useCORS: true,
+        backgroundColor: "#ffffff"
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.save("Raport_ROI.pdf");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Wystąpił błąd podczas generowania PDF. Spróbuj ponownie.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-bg-app pb-20 pt-8 relative font-sans">
-      
+
       {/* Header Actions */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-white/10 bg-bg-app/90 px-8 py-4 backdrop-blur-md">
         <div className="flex items-center gap-4">
@@ -25,24 +67,36 @@ export default function ReportPreviewPage() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-             <h1 className="text-sm font-bold text-white uppercase tracking-wider">Raport ROI - Październik 2023</h1>
-             <p className="text-xs text-text-muted">TechCorp Sp. z o.o.</p>
+            <h1 className="text-sm font-bold text-white uppercase tracking-wider">Raport ROI - Październik 2023</h1>
+            <p className="text-xs text-text-muted">TechCorp Sp. z o.o.</p>
           </div>
         </div>
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 rounded-full bg-white/5 px-6 py-2 text-xs font-bold uppercase tracking-wider text-white border border-white/10 hover:bg-white/10 transition-colors">
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 rounded-full bg-white/5 px-6 py-2 text-xs font-bold uppercase tracking-wider text-white border border-white/10 hover:bg-white/10 transition-colors"
+          >
             <Printer className="h-4 w-4" /> Drukuj
           </button>
-          <button className="flex items-center gap-2 rounded-full bg-white text-black px-6 py-2 text-xs font-bold uppercase tracking-wider hover:bg-gray-200 transition-colors">
-            <Download className="h-4 w-4" /> Pobierz PDF
+          <button
+            onClick={handleDownloadPDF}
+            disabled={isGenerating}
+            className="flex items-center gap-2 rounded-full bg-white text-black px-6 py-2 text-xs font-bold uppercase tracking-wider hover:bg-gray-200 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {isGenerating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {isGenerating ? "Generowanie..." : "Pobierz PDF"}
           </button>
         </div>
       </div>
 
       {/* A4 Paper Container - Keeps white paper look for contrast */}
-      <div className="mx-auto mt-24 max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl relative z-10" style={{ aspectRatio: "210/297" }}>
+      <div ref={reportRef} className="mx-auto mt-24 max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl relative z-10" style={{ aspectRatio: "210/297" }}>
         <div className="flex h-full flex-col p-[20mm]">
-          
+
           {/* Report Header */}
           <div className="mb-12 flex items-start justify-between border-b border-gray-100 pb-8">
             <div className="flex items-center gap-4">
@@ -63,8 +117,8 @@ export default function ReportPreviewPage() {
           <div className="mb-10">
             <h4 className="mb-4 text-xs font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2">Podsumowanie</h4>
             <p className="text-gray-700 leading-relaxed text-sm">
-              W tym miesiącu twoje automatyzacje przetworzyły łącznie <span className="font-bold text-gray-900">14,500 elementów</span>, 
-              co przełożyło się na bezpośrednią oszczędność <span className="font-bold text-green-600">7,500 PLN</span>. 
+              W tym miesiącu twoje automatyzacje przetworzyły łącznie <span className="font-bold text-gray-900">14,500 elementów</span>,
+              co przełożyło się na bezpośrednią oszczędność <span className="font-bold text-green-600">7,500 PLN</span>.
               Nowy proces "Invoice Parser" odpowiadał za 40% tych oszczędności. Czas pracy systemu (Uptime) wyniósł 99.9%.
             </p>
           </div>
@@ -90,33 +144,33 @@ export default function ReportPreviewPage() {
 
           {/* Chart Section */}
           <div className="mb-12">
-             <h4 className="mb-6 text-xs font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2">Trend Oszczędności</h4>
-             <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 600 }} 
-                      dy={10}
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 600 }} 
-                      tickFormatter={(value) => `${value}`}
-                    />
-                    <Bar 
-                      dataKey="saved" 
-                      fill="#111" 
-                      radius={[2, 2, 0, 0]} 
-                      barSize={50}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-             </div>
+            <h4 className="mb-6 text-xs font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2">Trend Oszczędności</h4>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 600 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 600 }}
+                    tickFormatter={(value) => `${value}`}
+                  />
+                  <Bar
+                    dataKey="saved"
+                    fill="#111"
+                    radius={[2, 2, 0, 0]}
+                    barSize={50}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {/* Tasks Table */}
