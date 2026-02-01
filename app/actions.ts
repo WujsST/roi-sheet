@@ -30,7 +30,7 @@ export async function getAutomationsData() {
   const { data, error } = await supabase
     .from('automations_dashboard')
     .select('*')
-    .order('automation_id', { ascending: false })
+    .order('created_at', { ascending: false })
 
   if (error) throw error
   return data as Automation[]
