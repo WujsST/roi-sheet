@@ -183,7 +183,7 @@ export default function AutomationsPage() {
                     <div className="font-bold text-white font-display text-lg tracking-tight mb-1">{item.name}</div>
                     <div className="flex items-center gap-3 text-xs font-mono text-text-muted">
                       <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> {item.client_name}
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> {item.client_name || 'Brak klienta'}
                       </span>
                       <span>Utworzono: {new Date(item.created_at).toLocaleDateString('pl-PL')}</span>
                     </div>
