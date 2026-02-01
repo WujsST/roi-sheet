@@ -28,9 +28,9 @@ export async function getDashboardData() {
 export async function getAutomationsData() {
   const supabase = await createClient()
   const { data, error } = await supabase
-    .from('automations')
+    .from('automations_dashboard')
     .select('*')
-    .order('created_at', { ascending: false })
+    .order('automation_id', { ascending: false })
 
   if (error) throw error
   return data as Automation[]
