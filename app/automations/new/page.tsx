@@ -24,6 +24,7 @@ export default function NewAutomationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [workflowId, setWorkflowId] = useState("");
+  const [createdAutomationId, setCreatedAutomationId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -39,20 +40,27 @@ export default function NewAutomationPage() {
     // Fetch clients
     getClientsData().then(data => {
       setClients(data);
-      if (data.length > 0) {
-        setFormData(prev => ({ ...prev, client: data[0].id }));
-      }
+      // Removed auto-select to allow "no selection" (which will default to first in handleActivate if needed)
     });
   }, []);
 
   const handleActivate = async () => {
-    if (!formData.name || !formData.client || !formData.category) {
-      alert("Proszę uzupełnić wszystkie pola (Nazwa, Kategoria, Klient)");
+    if (!formData.name || !formData.category) {
+      alert("Proszę uzupełnić nazwę i kategorię.");
       return;
     }
 
     setIsSubmitting(true);
     try {
+      // Logic: If user selected a client, use it. If not, use the first available one as fallback.
+      const selectedClientId = formData.client || (clients.length > 0 ? clients[0].id : null);
+
+      if (!selectedClientId) {
+        alert("Brak dostępnych klientów w systemie.");
+        setIsSubmitting(false);
+        return;
+      }
+
       // Map category to icon
       const iconMap: Record<string, string> = {
         email: 'Mail',
@@ -60,15 +68,21 @@ export default function NewAutomationPage() {
         support: 'Bot'
       };
 
-      await createNewAutomation({
+      const result = await createNewAutomation({
         name: formData.name,
         icon: iconMap[formData.category] || 'Zap',
         hourlyRate: formData.hourlyRate,
         workflowId: workflowId,
-        clientIds: [formData.client]
+        clientIds: [selectedClientId]
       });
 
-      router.push('/automations');
+      // Show success state with ID
+      if (result && result.length > 0) {
+        setCreatedAutomationId(result[0].id);
+      } else {
+        router.push('/automations');
+      }
+
     } catch (error) {
       console.error(error);
       alert("Wystąpił błąd podczas tworzenia automatyzacji.");
@@ -94,6 +108,44 @@ export default function NewAutomationPage() {
       opacity: 0,
     }),
   };
+
+  if (createdAutomationId) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center space-y-8 bg-black p-8 text-center animate-in fade-in duration-500">
+        <div className="rounded-full bg-brand-success/10 p-6">
+          <Bot className="h-12 w-12 text-brand-success" />
+        </div>
+        <div className="space-y-4 max-w-lg">
+          <h2 className="text-3xl font-bold text-white">Automatyzacja Utworzona!</h2>
+          <p className="text-gray-400">
+            Aby połączyć n8n z tą automatyzacją, użyj poniższego ID w swoim workflow (INSERT do tabeli workflow_executions).
+          </p>
+        </div>
+
+        <div className="w-full max-w-lg space-y-2 text-left">
+          <label className="text-xs font-bold text-gray-500 uppercase">Automation ID (UUID)</label>
+          <div className="flex items-center gap-3">
+            <code className="flex-1 rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-brand-accent font-mono break-all">
+              {createdAutomationId}
+            </code>
+            <button
+              onClick={() => navigator.clipboard.writeText(createdAutomationId)}
+              className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-4 text-white hover:bg-white hover:text-black transition-colors"
+            >
+              <Copy className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        <Link
+          href="/automations"
+          className="rounded-full bg-white px-8 py-3 text-sm font-bold text-black hover:bg-gray-200 transition-colors"
+        >
+          Wróć do listy
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-4xl py-12 px-6">
@@ -134,6 +186,24 @@ export default function NewAutomationPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
+                </div>
+                <div>
+                  <label className="mb-3 block text-sm font-bold text-white uppercase tracking-wider flex justify-between">
+                    <span>Klient</span>
+                    <span className="text-gray-500 text-xs normal-case">(Opcjonalnie)</span>
+                  </label>
+                  <select
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-4 text-white outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all appearance-none font-mono"
+                    value={formData.client}
+                    onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                  >
+                    <option value="" className="bg-black text-gray-400">Nie wybieraj teraz (Przypisz domyślnego)</option>
+                    {clients.map(client => (
+                      <option key={client.id} value={client.id} className="bg-black">
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
