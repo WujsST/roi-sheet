@@ -8,19 +8,27 @@ import { AutomationConfiguratorWidget } from "@/components/AutomationConfigurato
 import { ReportPreviewWidget } from "@/components/ReportPreviewWidget";
 import { Wallet, Clock, Zap, AlertTriangle } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
-import type { Automation, SavingsHistory, DashboardStats } from "@/lib/supabase/types";
+import type { Automation, MonthlySavings, ComputedDashboardStats } from "@/lib/supabase/types";
 
 interface DashboardContentProps {
   automations: Automation[];
-  savingsHistory: SavingsHistory[];
-  stats: DashboardStats | null;
+  savingsHistory: MonthlySavings[];
+  stats: ComputedDashboardStats | null;
 }
 
 export function DashboardContent({ automations, savingsHistory, stats }: DashboardContentProps) {
-  const totalSavings = stats?.total_savings ?? 7500;
-  const timeSaved = stats?.time_saved_hours ?? 45;
-  const efficiencyScore = stats?.efficiency_score ?? 85;
-  const inactionCost = stats?.inaction_cost ?? 2100;
+  if (!stats) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-text-muted font-mono">Ładowanie statystyk...</p>
+      </div>
+    )
+  }
+
+  const totalSavings = stats.total_savings;
+  const timeSaved = stats.time_saved_hours;
+  const efficiencyScore = stats.efficiency_score;
+  const inactionCost = stats.inaction_cost;
 
   const formatSavings = (value: number) => {
     if (value >= 1000) {

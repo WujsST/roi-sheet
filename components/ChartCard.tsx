@@ -1,26 +1,26 @@
 "use client";
 
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip } from "recharts";
-import type { SavingsHistory } from "@/lib/supabase/types";
+import type { MonthlySavings } from "@/lib/supabase/types";
 
 interface ChartCardProps {
-  data?: SavingsHistory[];
+  data?: MonthlySavings[];
 }
 
-const fallbackData = [
-  { name: "MAJ", saved: 2400 },
-  { name: "CZE", saved: 1398 },
-  { name: "LIP", saved: 9800 },
-  { name: "SIE", saved: 3908 },
-  { name: "WRZ", saved: 4800 },
-  { name: "PAZ", saved: 7500 },
-];
-
 export function ChartCard({ data }: ChartCardProps) {
-  const chartData = data && data.length > 0
-    ? data.map(item => ({ name: item.month.toUpperCase(), saved: Number(item.amount) }))
-    : fallbackData;
-  
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center p-8">
+        <p className="text-text-muted font-mono">Brak danych o oszczędnościach</p>
+      </div>
+    )
+  }
+
+  const chartData = data.map(item => ({
+    name: item.month_abbr.toUpperCase(),
+    saved: Number(item.total_saved)
+  }));
+
   const lastValue = chartData[chartData.length - 1]?.saved ?? 0;
   const formatValue = (val: number) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val.toString();
   return (

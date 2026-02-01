@@ -17,14 +17,16 @@ interface AutomationListProps {
   automations?: Automation[];
 }
 
-const fallbackAutomations = [
-  { id: "1", name: "Lead Scoring AI", client_name: "TechCorp Sp. z o.o.", saved_today: 120, status: "healthy" as const, icon: "Mail", created_at: "" },
-  { id: "2", name: "Invoice Parser", client_name: "LogisticsPro", saved_today: 350, status: "healthy" as const, icon: "FileText", created_at: "" },
-  { id: "3", name: "HR Onboarding", client_name: "StartupHub", saved_today: 0, status: "error" as const, icon: "UserPlus", created_at: "" },
-];
-
 export function AutomationList({ automations }: AutomationListProps) {
-  const items = automations && automations.length > 0 ? automations : fallbackAutomations;
+  if (!automations || automations.length === 0) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center p-8">
+        <p className="text-text-muted font-mono">Brak aktywnych automatyzacji</p>
+      </div>
+    )
+  }
+
+  const items = automations;
   return (
     <div className="flex h-full flex-col p-8">
       <div className="mb-6 flex items-center gap-2">
