@@ -244,3 +244,51 @@ export async function getUnlinkedWorkflows() {
 
   return data as { workflow_id: string; execution_count: number; last_seen: string }[]
 }
+
+// --- Workflow Management ---
+
+export async function updateAutomationName(automationId: string, name: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('automations')
+    .update({ name })
+    .eq('id', automationId)
+
+  if (error) throw error
+
+  revalidatePath('/automations')
+  return { success: true }
+}
+
+export async function assignClientToAutomation(automationId: string, clientId: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('automations')
+    .update({ client_id: clientId })
+    .eq('id', automationId)
+
+  if (error) throw error
+
+  revalidatePath('/automations')
+  revalidatePath('/clients')
+  return { success: true }
+}
+
+export async function getUnnamedAutomations() {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('automations')
+    .select('*')
+    .is('name', null)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching unnamed automations:', error)
+    return []
+  }
+
+  return data as Automation[]
+}

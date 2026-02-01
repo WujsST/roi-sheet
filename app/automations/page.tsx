@@ -3,13 +3,16 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell, Bot, ArrowRight } from "lucide-react";
+import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell, Bot, ArrowRight, Edit3, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAutomationsData, getClientsData, getUnlinkedWorkflows } from "@/app/actions";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import type { Automation, Client } from "@/lib/supabase/types";
 import { AddAutomationModal } from "@/components/modals/AddAutomationModal"
+import { AssignClientModal } from "@/components/modals/AssignClientModal"
+import { RenameWorkflowModal } from "@/components/modals/RenameWorkflowModal"
+import { UnnamedWorkflowAlert } from "@/components/UnnamedWorkflowAlert"
 
 // Icon mapping helper
 const getIconComponent = (iconName: string) => {
@@ -36,6 +39,10 @@ export default function AutomationsPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [error, setError] = useState<Error | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedAutomation, setSelectedAutomation] = useState<Automation | null>(null)
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false)
+  const [isAssignClientModalOpen, setIsAssignClientModalOpen] = useState(false)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchData() {
@@ -232,15 +239,49 @@ export default function AutomationsPage() {
                   </div>
 
                   {/* Menu */}
-                  <button className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-white transition-colors">
-                    <MoreHorizontal className="h-5 w-5" />
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
+                      className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-white transition-colors"
+                    >
+                      <MoreHorizontal className="h-5 w-5" />
+                    </button>
+
+                    {openMenuId === item.id && (
+                      <div className="absolute right-0 top-10 z-10 w-48 rounded-xl border border-white/10 bg-[#0a0a0a] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                        <button
+                          onClick={() => {
+                            setSelectedAutomation(item)
+                            setIsRenameModalOpen(true)
+                            setOpenMenuId(null)
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/5 transition-colors rounded-t-xl flex items-center gap-2"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                          Zmień nazwę
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedAutomation(item)
+                            setIsAssignClientModalOpen(true)
+                            setOpenMenuId(null)
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/5 transition-colors rounded-b-xl flex items-center gap-2"
+                        >
+                          <User className="h-4 w-4" />
+                          Przypisz klienta
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <UnnamedWorkflowAlert />
 
       <AddAutomationModal
         isOpen={isModalOpen}
@@ -252,6 +293,31 @@ export default function AutomationsPage() {
         }}
         availableClients={clients}
       />
+
+      {selectedAutomation && (
+        <>
+          <RenameWorkflowModal
+            isOpen={isRenameModalOpen}
+            onClose={() => {
+              setIsRenameModalOpen(false)
+              setSelectedAutomation(null)
+            }}
+            automationId={selectedAutomation.id}
+            currentName={selectedAutomation.name}
+          />
+
+          <AssignClientModal
+            isOpen={isAssignClientModalOpen}
+            onClose={() => {
+              setIsAssignClientModalOpen(false)
+              setSelectedAutomation(null)
+            }}
+            automationId={selectedAutomation.id}
+            automationName={selectedAutomation.name || 'Unnamed automation'}
+            clients={clients}
+          />
+        </>
+      )}
     </div>
   );
 }
