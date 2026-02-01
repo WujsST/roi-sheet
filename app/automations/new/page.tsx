@@ -119,22 +119,49 @@ function NewAutomationContent() {
         <div className="space-y-4 max-w-lg">
           <h2 className="text-3xl font-bold text-white">Automatyzacja Utworzona!</h2>
           <p className="text-gray-400">
-            Aby połączyć n8n z tą automatyzacją, użyj poniższego ID w swoim workflow (INSERT do tabeli workflow_executions).
+            Twój proces jest gotowy. Masz dwie opcje integracji z n8n:
           </p>
         </div>
 
-        <div className="w-full max-w-lg space-y-2 text-left">
-          <label className="text-xs font-bold text-gray-500 uppercase">Automation ID (UUID)</label>
-          <div className="flex items-center gap-3">
-            <code className="flex-1 rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-brand-accent font-mono break-all">
-              {createdAutomationId}
-            </code>
-            <button
-              onClick={() => navigator.clipboard.writeText(createdAutomationId)}
-              className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-4 text-white hover:bg-white hover:text-black transition-colors"
-            >
-              <Copy className="h-5 w-5" />
-            </button>
+        <div className="w-full max-w-lg space-y-6 text-left">
+          {/* Option 1: Automation ID (UUID) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-brand-accent uppercase">Opcja A: UUID (Najpewniejsza)</label>
+              <span className="text-[10px] text-gray-500">Wklej w polu `automation_id`</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <code className="flex-1 rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-brand-accent font-mono break-all">
+                {createdAutomationId}
+              </code>
+              <button
+                onClick={() => navigator.clipboard.writeText(createdAutomationId)}
+                className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-4 text-white hover:bg-white hover:text-black transition-colors"
+                title="Kopiuj UUID"
+              >
+                <Copy className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Option 2: Workflow ID (Text) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-gray-400 uppercase">Opcja B: Workflow ID (Tekst)</label>
+              <span className="text-[10px] text-gray-500">Wklej w polu `workflow_id`</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <code className="flex-1 rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-gray-300 font-mono break-all">
+                {workflowId}
+              </code>
+              <button
+                onClick={() => navigator.clipboard.writeText(workflowId)}
+                className="flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-4 text-white hover:bg-white hover:text-black transition-colors"
+                title="Kopiuj Workflow ID"
+              >
+                <Copy className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
 
