@@ -15,7 +15,7 @@ import { RenameWorkflowModal } from "@/components/modals/RenameWorkflowModal"
 import { UnnamedWorkflowAlert } from "@/components/UnnamedWorkflowAlert"
 
 // Icon mapping helper
-const getIconComponent = (iconName: string) => {
+const getIconComponent = (iconName: string | null) => {
   const icons: { [key: string]: any } = {
     Mail,
     FileText,
@@ -29,7 +29,7 @@ const getIconComponent = (iconName: string) => {
     Bell,
     Bot
   };
-  return icons[iconName] || Workflow;
+  return iconName ? (icons[iconName] || Workflow) : Workflow;
 };
 
 export default function AutomationsPage() {
