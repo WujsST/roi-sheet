@@ -214,7 +214,33 @@ export async function createNewAutomation(data: {
       .eq('id', clientId)
   }
 
+  // Trigger reprocessing of pending n8n executions
+  try {
+    const { data: reprocessedCount, error: rpcError } = await supabase.rpc('reprocess_n8n_executions', {
+      p_workflow_id: validated.workflowId
+    });
+    console.log(`Reprocessed ${reprocessedCount} executions for workflow ${validated.workflowId}`);
+    if (rpcError) console.error("Error reprocessing executions:", rpcError);
+  } catch (e) {
+    console.error("Failed to reprocess executions:", e);
+  }
+
   revalidatePath('/automations')
   revalidatePath('/clients')
   return result
+}
+
+// --- Unlinked Workflows (n8n) ---
+
+export async function getUnlinkedWorkflows() {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.rpc('get_unlinked_workflows_stats')
+
+  if (error) {
+    console.error('Error fetching unlinked workflows:', error)
+    return []
+  }
+
+  return data as { workflow_id: string; execution_count: number; last_seen: string }[]
 }

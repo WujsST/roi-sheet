@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Stepper } from "@/components/Stepper";
 import { Copy, Mail, Database, Bot, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -18,8 +18,11 @@ const categories = [
   { id: "support", name: "AI Support", icon: Bot, saved: "15min / ticket" },
 ];
 
-export default function NewAutomationPage() {
+function NewAutomationContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const prefilledWorkflowId = searchParams.get("workflowId");
+
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
@@ -34,15 +37,16 @@ export default function NewAutomationPage() {
   });
 
   useEffect(() => {
-    // Generate random workflow ID on mount
-    setWorkflowId(`wh_${Math.random().toString(36).substring(2, 11)}`);
+    if (prefilledWorkflowId) {
+      setWorkflowId(prefilledWorkflowId);
+    } else {
+      setWorkflowId(`wh_${Math.random().toString(36).substring(2, 11)}`);
+    }
 
-    // Fetch clients
     getClientsData().then(data => {
       setClients(data);
-      // Removed auto-select to allow "no selection" (which will default to first in handleActivate if needed)
     });
-  }, []);
+  }, [prefilledWorkflowId]);
 
   const handleActivate = async () => {
     if (!formData.name || !formData.category) {
@@ -52,7 +56,6 @@ export default function NewAutomationPage() {
 
     setIsSubmitting(true);
     try {
-      // Logic: If user selected a client, use it. If not, use the first available one as fallback.
       const selectedClientId = formData.client || (clients.length > 0 ? clients[0].id : null);
 
       if (!selectedClientId) {
@@ -61,7 +64,6 @@ export default function NewAutomationPage() {
         return;
       }
 
-      // Map category to icon
       const iconMap: Record<string, string> = {
         email: 'Mail',
         data: 'Database',
@@ -76,7 +78,6 @@ export default function NewAutomationPage() {
         clientIds: [selectedClientId]
       });
 
-      // Show success state with ID
       if (result && result.length > 0) {
         setCreatedAutomationId(result[0].id);
       } else {
@@ -328,5 +329,17 @@ export default function NewAutomationPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function NewAutomationPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-black">
+        <Loader2 className="h-10 w-10 animate-spin text-brand-accent" />
+      </div>
+    }>
+      <NewAutomationContent />
+    </Suspense>
   );
 }

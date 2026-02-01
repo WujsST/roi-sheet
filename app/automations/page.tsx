@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell, Bot } from "lucide-react";
+import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell, Bot, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getAutomationsData, getClientsData } from "@/app/actions";
+import { getAutomationsData, getClientsData, getUnlinkedWorkflows } from "@/app/actions";
+import { formatDistanceToNow } from "date-fns";
+import { pl } from "date-fns/locale";
 import type { Automation, Client } from "@/lib/supabase/types";
 import { AddAutomationModal } from "@/components/modals/AddAutomationModal"
 
@@ -30,6 +32,7 @@ const getIconComponent = (iconName: string) => {
 export default function AutomationsPage() {
   const router = useRouter()
   const [automations, setAutomations] = useState<Automation[]>([])
+  const [unlinkedWorkflows, setUnlinkedWorkflows] = useState<{ workflow_id: string; execution_count: number; last_seen: string }[]>([])
   const [clients, setClients] = useState<Client[]>([])
   const [error, setError] = useState<Error | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -37,12 +40,14 @@ export default function AutomationsPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [automationsData, clientsData] = await Promise.all([
+        const [automationsData, clientsData, unlinkedData] = await Promise.all([
           getAutomationsData(),
-          getClientsData()
+          getClientsData(),
+          getUnlinkedWorkflows()
         ])
         setAutomations(automationsData)
         setClients(clientsData)
+        setUnlinkedWorkflows(unlinkedData)
       } catch (e) {
         setError(e as Error)
         console.error('Error fetching data:', e)
@@ -86,6 +91,48 @@ export default function AutomationsPage() {
           </Link>
         </div>
       </div>
+
+      {unlinkedWorkflows.length > 0 && (
+        <div className="rounded-xl border border-brand-accent/20 bg-brand-accent/5 p-6 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-full bg-brand-accent/10">
+              <Bot className="h-5 w-5 text-brand-accent" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white">Wykryto nowe procesy ({unlinkedWorkflows.length})</h3>
+              <p className="text-xs text-text-muted">Poniższe procesy n8n nie są jeszcze przypisane do klientów.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {unlinkedWorkflows.map((workflow) => (
+              <div key={workflow.workflow_id} className="group relative overflow-hidden rounded-lg bg-black/40 border border-white/5 p-4 hover:border-brand-accent/50 transition-colors">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="bg-white/5 p-1.5 rounded text-xs font-mono text-gray-400">
+                    ID: {workflow.workflow_id.substring(0, 8)}...
+                  </div>
+                  <span className="text-xs font-bold text-white bg-brand-accent/20 px-2 py-1 rounded-full">
+                    {workflow.execution_count} execs
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between mt-2">
+                  <div className="text-xs text-gray-500">
+                    Ostatnia: {formatDistanceToNow(new Date(workflow.last_seen), { addSuffix: true, locale: pl })}
+                  </div>
+
+                  <Link
+                    href={`/automations/new?workflowId=${workflow.workflow_id}`}
+                    className="flex items-center gap-1 text-xs font-bold text-brand-accent hover:underline"
+                  >
+                    Konfiguruj <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Error State */}
       {error && (
