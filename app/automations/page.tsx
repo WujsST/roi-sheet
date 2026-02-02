@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell, Bot, ArrowRight, Edit3, User, DollarSign } from "lucide-react";
+import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell, Bot, ArrowRight, Edit3, User, DollarSign, TrendingUp, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAutomationsData, getClientsData, getUnlinkedWorkflows } from "@/app/actions";
 import { formatDistanceToNow } from "date-fns";
@@ -191,7 +191,18 @@ export default function AutomationsPage() {
                         <DollarSign className="h-3 w-3 text-brand-accent" />
                         <span className="text-brand-accent font-semibold">{item.hourly_rate} PLN/h</span>
                       </span>
-                      <span>Utworzono: {new Date(item.created_at).toLocaleDateString('pl-PL')}</span>
+                      {item.roi_percentage !== undefined && item.roi_percentage !== null && (
+                        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/20">
+                          <TrendingUp className="h-3 w-3 text-green-500" />
+                          <span className="text-green-500 font-semibold">ROI: {item.roi_percentage.toFixed(0)}%</span>
+                        </span>
+                      )}
+                      {item.executions_count !== undefined && item.saved_hours !== undefined && (
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="h-3 w-3" />
+                          {item.executions_count} exec • {item.saved_hours.toFixed(1)}h
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

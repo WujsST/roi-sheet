@@ -27,10 +27,21 @@ export default function ReportPreviewPage() {
 
     setIsGenerating(true);
     try {
+      // Hide header before generating PDF
+      const header = document.querySelector('.no-print') as HTMLElement;
+      const originalDisplay = header?.style.display || '';
+      if (header) header.style.display = 'none';
+
+      // Wait for DOM to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const canvas = await html2canvas(reportRef.current, {
         logging: false,
         useCORS: true
       });
+
+      // Restore header
+      if (header) header.style.display = originalDisplay;
 
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
@@ -56,7 +67,7 @@ export default function ReportPreviewPage() {
     <div className="min-h-screen bg-bg-app pb-20 pt-8 relative font-sans">
 
       {/* Header Actions */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-white/10 bg-bg-app/90 px-8 py-4 backdrop-blur-md">
+      <div className="no-print fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-white/10 bg-bg-app/90 px-8 py-4 backdrop-blur-md">
         <div className="flex items-center gap-4">
           <Link
             href="/"

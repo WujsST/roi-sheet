@@ -102,9 +102,9 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
   // Count today's executions
   const today = new Date().toISOString().split('T')[0]
   const { count: todayExecutions } = await supabase
-    .from('workflow_executions')
+    .from('executions_raw')
     .select('*', { count: 'exact', head: true })
-    .gte('started_at', today)
+    .gte('created_at', today)
 
   return {
     total_savings: Number((statsData as any)?.total_savings) || 0,

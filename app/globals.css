@@ -4,22 +4,26 @@
   /* Colors - Industrial Tech Palette */
   --color-brand-primary: #ffffff;
   --color-brand-secondary: #0a0a0a;
-  
+
   --color-brand-success: #22c55e;
   --color-brand-warning: #ef4444;
   --color-brand-accent: #8b5cf6;
 
-  --color-bg-app: #000000; /* Pure Black */
+  --color-bg-app: #000000;
+  /* Pure Black */
   --color-bg-sidebar: #000000;
-  --color-bg-card: #0a0a0a; /* Very Dark Grey (Solid) */
+  --color-bg-card: #0a0a0a;
+  /* Very Dark Grey (Solid) */
   --color-bg-card-hover: #111111;
-  
+
   --color-text-main: #ffffff;
-  --color-text-muted: #737373; /* Neutral 500 */
-  
-  --color-border-subtle: #262626; /* Visible Grey Border */
+  --color-text-muted: #737373;
+  /* Neutral 500 */
+
+  --color-border-subtle: #262626;
+  /* Visible Grey Border */
   --color-border-highlight: #404040;
-  
+
   /* Typography */
   --font-sans: var(--font-inter);
   --font-display: var(--font-space);
@@ -48,4 +52,28 @@ body {
 
 @utility card-hover {
   @apply border-border-highlight bg-bg-card-hover;
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  @page {
+    margin: 0;
+    size: A4;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  /* Ensure content fits on page */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }

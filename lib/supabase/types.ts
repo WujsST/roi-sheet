@@ -9,6 +9,14 @@ export interface Automation {
   workflow_id: string | null
   hourly_rate: number
   created_at: string
+  // New ROI fields from simplified schema
+  seconds_saved_per_execution?: number
+  monthly_cost_pln?: number
+  executions_count?: number
+  saved_hours?: number
+  money_saved_pln?: number
+  roi_percentage?: number | null
+  last_run_at?: string | null
 }
 
 export interface SavingsHistory {
@@ -89,4 +97,36 @@ export interface MonthlySavings {
   month_abbr: string
   month_date: string
   total_saved: number
+}
+
+// Automations Dashboard View (new simplified schema)
+export interface AutomationDashboard {
+  id: string
+  name: string
+  client_id: string | null
+  client_name: string
+  workflow_id: string
+  icon: string | null
+  status: 'healthy' | 'error' | 'paused'
+  hourly_rate: number
+  seconds_saved_per_execution: number
+  monthly_cost_pln: number
+  created_at: string
+  executions_count: number
+  saved_seconds: number
+  saved_hours: number
+  money_saved_pln: number
+  roi_percentage: number | null
+  last_run_at: string | null
+  saved_today: number
+}
+
+// Clients Dashboard View (aggregated per client)
+export interface ClientDashboard {
+  client_id: string
+  client_name: string
+  automations_count: number
+  executions_count: number
+  money_saved_pln_total: number
+  saved_hours_total: number
 }
