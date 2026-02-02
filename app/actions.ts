@@ -74,34 +74,46 @@ export async function getLogsData() {
 export async function getComputedDashboardStats(): Promise<ComputedDashboardStats> {
   const supabase = await createClient()
 
-  // Call PostgreSQL RPC functions in parallel
-  const [savingsData, timeSavedData, efficiencyData, inactionData, allClientsSavings] = await Promise.all([
-    supabase.rpc('get_monthly_total_savings'),
-    supabase.rpc('get_monthly_time_saved'),
-    supabase.rpc('get_monthly_efficiency'),
-    supabase.rpc('get_inaction_cost'),
-    supabase.rpc('get_all_clients_total_savings')
-  ])
+  // Call new RPC function that calculates stats from executions_raw
+  const { data: statsData, error } = await supabase
+    .rpc('calculate_dashboard_stats')
+    .single()
 
-  // Additional metrics
+  if (error) {
+    console.error('Error fetching dashboard stats:', error)
+    // Return default values on error
+    return {
+      total_savings: 0,
+      time_saved_hours: 0,
+      efficiency_score: 0,
+      inaction_cost: 0,
+      active_automations: 0,
+      total_executions_today: 0,
+      total_savings_all_clients: 0
+    }
+  }
+
+  // Count active automations
   const { count: activeAutomations } = await supabase
     .from('automations')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'healthy')
 
+  // Count today's executions
+  const today = new Date().toISOString().split('T')[0]
   const { count: todayExecutions } = await supabase
-    .from('workflow_executions')
+    .from('executions_raw')
     .select('*', { count: 'exact', head: true })
-    .gte('start_time', new Date().toISOString().split('T')[0])
+    .gte('started_at', today)
 
   return {
-    total_savings: savingsData.data?.[0]?.total_savings ?? 0,
-    time_saved_hours: timeSavedData.data?.[0]?.time_saved_hours ?? 0,
-    efficiency_score: efficiencyData.data?.[0]?.efficiency_score ?? 0,
-    inaction_cost: inactionData.data?.[0]?.inaction_cost ?? 0,
-    active_automations: activeAutomations ?? 0,
-    total_executions_today: todayExecutions ?? 0,
-    total_savings_all_clients: allClientsSavings.data?.[0]?.total_savings_all_clients ?? 0
+    total_savings: Number((statsData as any)?.total_savings) || 0,
+    time_saved_hours: Number((statsData as any)?.time_saved_hours) || 0,
+    efficiency_score: (statsData as any)?.efficiency_score || 0,
+    inaction_cost: Number((statsData as any)?.inaction_cost) || 0,
+    active_automations: activeAutomations || 0,
+    total_executions_today: todayExecutions || 0,
+    total_savings_all_clients: Number((statsData as any)?.total_savings) || 0
   }
 }
 
