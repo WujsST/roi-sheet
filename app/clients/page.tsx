@@ -36,6 +36,24 @@ export default function ClientsPage() {
     fetchData()
   }, [])
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.dropdown-container')) {
+        setOpenDropdown(null)
+      }
+    }
+
+    if (openDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [openDropdown])
+
   return (
     <div className="space-y-8 pb-20">
       {/* Header */}
@@ -97,7 +115,7 @@ export default function ClientsPage() {
                     <p className="text-xs text-text-muted font-mono">{client.industry}</p>
                   </div>
                 </div>
-                <div className="relative">
+                <div className="relative dropdown-container">
                   <button
                     onClick={() => setOpenDropdown(openDropdown === client.id ? null : client.id)}
                     className="text-text-muted hover:text-white transition-colors"

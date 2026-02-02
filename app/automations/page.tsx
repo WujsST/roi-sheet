@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell, Bot, ArrowRight, Edit3, User } from "lucide-react";
+import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell, Bot, ArrowRight, Edit3, User, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAutomationsData, getClientsData, getUnlinkedWorkflows } from "@/app/actions";
 import { formatDistanceToNow } from "date-fns";
@@ -12,6 +12,7 @@ import type { Automation, Client } from "@/lib/supabase/types";
 import { AddAutomationModal } from "@/components/modals/AddAutomationModal"
 import { AssignClientModal } from "@/components/modals/AssignClientModal"
 import { RenameWorkflowModal } from "@/components/modals/RenameWorkflowModal"
+import { EditAutomationModal } from "@/components/modals/EditAutomationModal"
 import { UnnamedWorkflowAlert } from "@/components/UnnamedWorkflowAlert"
 
 // Icon mapping helper
@@ -42,6 +43,7 @@ export default function AutomationsPage() {
   const [selectedAutomation, setSelectedAutomation] = useState<Automation | null>(null)
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false)
   const [isAssignClientModalOpen, setIsAssignClientModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -263,6 +265,17 @@ export default function AutomationsPage() {
                         <button
                           onClick={() => {
                             setSelectedAutomation(item)
+                            setIsEditModalOpen(true)
+                            setOpenMenuId(null)
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/5 transition-colors flex items-center gap-2"
+                        >
+                          <DollarSign className="h-4 w-4" />
+                          Edytuj stawkę
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedAutomation(item)
                             setIsAssignClientModalOpen(true)
                             setOpenMenuId(null)
                           }}
@@ -315,6 +328,19 @@ export default function AutomationsPage() {
             automationId={selectedAutomation.id}
             automationName={selectedAutomation.name || 'Unnamed automation'}
             clients={clients}
+          />
+
+          <EditAutomationModal
+            isOpen={isEditModalOpen}
+            onClose={() => {
+              setIsEditModalOpen(false)
+              setSelectedAutomation(null)
+            }}
+            automation={selectedAutomation}
+            onSuccess={() => {
+              getAutomationsData().then(setAutomations)
+              router.refresh()
+            }}
           />
         </>
       )}

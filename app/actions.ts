@@ -102,7 +102,7 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
   // Count today's executions
   const today = new Date().toISOString().split('T')[0]
   const { count: todayExecutions } = await supabase
-    .from('executions_raw')
+    .from('workflow_executions')
     .select('*', { count: 'exact', head: true })
     .gte('started_at', today)
 
@@ -369,4 +369,22 @@ export async function getClientAutomations(clientId: string) {
   }
 
   return data
+}
+
+export async function updateAutomation(
+  automationId: string,
+  data: { hourly_rate?: number }
+) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('automations')
+    .update(data)
+    .eq('id', automationId)
+
+  if (error) throw error
+
+  revalidatePath('/automations')
+  revalidatePath('/clients')
+  return { success: true }
 }
