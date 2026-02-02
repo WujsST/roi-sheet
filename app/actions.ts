@@ -78,7 +78,7 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
   // Call new RPC function that calculates stats from executions_raw
   const { data: statsData, error } = await supabase
     .rpc('calculate_dashboard_stats')
-    .single()
+    .single() as { data: any; error: any }
 
   if (error) {
     console.error('Error fetching dashboard stats:', error)
