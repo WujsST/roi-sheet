@@ -60,15 +60,23 @@ body {
     display: none !important;
   }
 
+  /* Hide sidebar and navigation */
+  aside,
+  nav,
+  .sidebar {
+    display: none !important;
+  }
+
   @page {
     margin: 0;
     size: A4;
   }
 
-  body {
+  body,
+  html {
     margin: 0;
     padding: 0;
-    background: white;
+    background: white !important;
   }
 
   /* Ensure content fits on page */

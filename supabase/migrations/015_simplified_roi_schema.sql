@@ -126,7 +126,48 @@ COMMENT ON VIEW clients_dashboard IS
 'Aggregated ROI metrics per client';
 
 -- ============================================================================
--- 6. Update calculate_dashboard_stats() to Use New Views
+-- 6. Create Monthly Automations Stats View (for filtering by month)
+-- ============================================================================
+
+CREATE OR REPLACE VIEW public.monthly_automations_stats AS
+SELECT
+  a.id as automation_id,
+  a.name,
+  a.client_id,
+  DATE_TRUNC('month', er.created_at) as month,
+
+  -- Monthly metrics
+  COUNT(er.id) as executions_count,
+  (COUNT(er.id) * a.seconds_saved_per_execution) / 3600.0 as saved_hours,
+  ((COUNT(er.id) * a.seconds_saved_per_execution) / 3600.0) * a.hourly_rate as money_saved_pln
+
+FROM public.automations a
+LEFT JOIN public.executions_raw er ON er.n8n_workflow_id = a.n8n_workflow_id
+GROUP BY a.id, a.name, a.client_id, DATE_TRUNC('month', er.created_at);
+
+COMMENT ON VIEW monthly_automations_stats IS
+'Automations with ROI metrics aggregated by month from executions_raw. Used for monthly filtering and barcharts.';
+
+-- ============================================================================
+-- 7. Create Monthly Savings History View (for barcharts)
+-- ============================================================================
+
+CREATE OR REPLACE VIEW public.monthly_savings_history AS
+SELECT
+  TO_CHAR(month, 'Mon') as month_abbr,
+  month::DATE as month_date,
+  SUM(money_saved_pln) as total_saved
+FROM monthly_automations_stats
+WHERE month >= DATE_TRUNC('month', NOW() - INTERVAL '11 months')
+  AND month IS NOT NULL
+GROUP BY month
+ORDER BY month;
+
+COMMENT ON VIEW monthly_savings_history IS
+'Last 12 months of savings aggregated by month. Maps to MonthlySavings interface for barchart visualization.';
+
+-- ============================================================================
+-- 8. Update calculate_dashboard_stats() to Use New Views
 -- ============================================================================
 
 -- Drop old functions that reference workflow_executions
@@ -136,15 +177,14 @@ DROP FUNCTION IF EXISTS get_monthly_efficiency();
 DROP FUNCTION IF EXISTS get_inaction_cost();
 DROP FUNCTION IF EXISTS calculate_dashboard_stats();
 
--- Recreate with new logic based on automations_dashboard view
+-- Recreate with new logic based on monthly_automations_stats view
 CREATE OR REPLACE FUNCTION get_monthly_total_savings()
 RETURNS TABLE(total_savings DECIMAL) AS $$
 BEGIN
   RETURN QUERY
-  SELECT COALESCE(SUM(ad.money_saved_pln), 0)::DECIMAL
-  FROM automations_dashboard ad
-  JOIN executions_raw er ON er.n8n_workflow_id = ad.workflow_id
-  WHERE er.created_at >= DATE_TRUNC('month', NOW());
+  SELECT COALESCE(SUM(money_saved_pln), 0)::DECIMAL
+  FROM monthly_automations_stats
+  WHERE month = DATE_TRUNC('month', NOW());
 END;
 $$ LANGUAGE plpgsql;
 
@@ -152,10 +192,9 @@ CREATE OR REPLACE FUNCTION get_monthly_time_saved()
 RETURNS TABLE(time_saved_hours INTEGER) AS $$
 BEGIN
   RETURN QUERY
-  SELECT COALESCE(SUM(ad.saved_hours), 0)::INTEGER
-  FROM automations_dashboard ad
-  JOIN executions_raw er ON er.n8n_workflow_id = ad.workflow_id
-  WHERE er.created_at >= DATE_TRUNC('month', NOW());
+  SELECT COALESCE(SUM(saved_hours), 0)::INTEGER
+  FROM monthly_automations_stats
+  WHERE month = DATE_TRUNC('month', NOW());
 END;
 $$ LANGUAGE plpgsql;
 
@@ -216,7 +255,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 COMMENT ON FUNCTION calculate_dashboard_stats IS
-'Composite dashboard stats function - now using direct executions_raw joins';
+'Composite dashboard stats function - now using monthly_automations_stats view with proper monthly filtering';
 
 -- ============================================================================
 -- 7. Optional: Drop workflow_executions Table (if exists)

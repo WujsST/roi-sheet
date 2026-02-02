@@ -27,21 +27,32 @@ export default function ReportPreviewPage() {
 
     setIsGenerating(true);
     try {
-      // Hide header before generating PDF
+      // Hide header, sidebar, and set white background
       const header = document.querySelector('.no-print') as HTMLElement;
-      const originalDisplay = header?.style.display || '';
+      const sidebar = document.querySelector('aside') as HTMLElement;
+      const body = document.body;
+
+      const originalHeaderDisplay = header?.style.display || '';
+      const originalSidebarDisplay = sidebar?.style.display || '';
+      const originalBodyBg = body.style.background || '';
+
       if (header) header.style.display = 'none';
+      if (sidebar) sidebar.style.display = 'none';
+      body.style.background = 'white';
 
       // Wait for DOM to update
       await new Promise(resolve => setTimeout(resolve, 100));
 
       const canvas = await html2canvas(reportRef.current, {
         logging: false,
-        useCORS: true
+        useCORS: true,
+        background: '#ffffff'
       });
 
-      // Restore header
-      if (header) header.style.display = originalDisplay;
+      // Restore elements
+      if (header) header.style.display = originalHeaderDisplay;
+      if (sidebar) sidebar.style.display = originalSidebarDisplay;
+      body.style.background = originalBodyBg;
 
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
