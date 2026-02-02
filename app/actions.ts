@@ -304,3 +304,69 @@ export async function getUnnamedAutomations() {
 
   return data as Automation[]
 }
+
+// Client Management Actions
+export async function updateClient(
+  clientId: string,
+  data: {
+    name?: string
+    industry?: string
+    logo?: string
+    status?: 'active' | 'warning' | 'inactive'
+  }
+) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('clients')
+    .update(data)
+    .eq('id', clientId)
+
+  if (error) throw error
+
+  revalidatePath('/clients')
+  return { success: true }
+}
+
+export async function assignAutomationsToClient(
+  clientId: string,
+  automationIds: string[]
+) {
+  const supabase = await createClient()
+
+  // First, unassign all automations from this client
+  await supabase
+    .from('automations')
+    .update({ client_id: null })
+    .eq('client_id', clientId)
+
+  // Then assign selected automations
+  if (automationIds.length > 0) {
+    const { error } = await supabase
+      .from('automations')
+      .update({ client_id: clientId })
+      .in('id', automationIds)
+
+    if (error) throw error
+  }
+
+  revalidatePath('/clients')
+  revalidatePath('/automations')
+  return { success: true }
+}
+
+export async function getClientAutomations(clientId: string) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('automations')
+    .select('id, name')
+    .eq('client_id', clientId)
+
+  if (error) {
+    console.error('Error fetching client automations:', error)
+    return []
+  }
+
+  return data
+}
