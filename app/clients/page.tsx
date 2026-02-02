@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Users, MoreHorizontal, TrendingUp, Zap, Building2, Plus, ArrowUpRight, AlertCircle, Edit, ChevronDown } from "lucide-react";
+import { Users, MoreHorizontal, TrendingUp, Zap, Building2, Plus, ArrowUpRight, AlertCircle, Edit, ChevronDown, FileText } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { getClientsData, getAutomationsData } from "@/app/actions";
 import type { Client, Automation } from "@/lib/supabase/types";
@@ -135,6 +135,15 @@ export default function ClientsPage() {
                       >
                         <Edit className="h-4 w-4" />
                         Edytuj klienta
+                      </button>
+                      <button
+                        onClick={() => {
+                          router.push(`/reports/${client.id}`)
+                        }}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors rounded-xl"
+                      >
+                        <FileText className="h-4 w-4" />
+                        Generuj Raport
                       </button>
                     </div>
                   )}

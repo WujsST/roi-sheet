@@ -106,14 +106,55 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
     .select('*', { count: 'exact', head: true })
     .gte('created_at', today)
 
+  const count = activeAutomations || 0
+
   return {
-    total_savings: Number((statsData as any)?.total_savings) || 0,
-    time_saved_hours: Number((statsData as any)?.time_saved_hours) || 0,
-    efficiency_score: (statsData as any)?.efficiency_score || 0,
-    inaction_cost: Number((statsData as any)?.inaction_cost) || 0,
-    active_automations: activeAutomations || 0,
+    total_savings: statsData?.total_savings || 0,
+    time_saved_hours: statsData?.time_saved_hours || 0,
+    efficiency_score: statsData?.efficiency_score || 0,
+    inaction_cost: statsData?.inaction_cost || 0,
+    active_automations: count,
     total_executions_today: todayExecutions || 0,
-    total_savings_all_clients: Number((statsData as any)?.total_savings) || 0
+    total_savings_all_clients: statsData?.total_savings_all_clients || 0
+  }
+}
+
+export async function getClientReportData(clientId: string) {
+  const supabase = await createClient()
+
+  // 1. Get Client Details & Aggregated Stats
+  const { data: clientData, error: clientError } = await supabase
+    .from('clients_dashboard')
+    .select('*')
+    .eq('client_id', clientId)
+    .single()
+
+  if (clientError) throw clientError
+
+  // 2. Get Monthly Trends for Chart
+  const { data: trendsData, error: trendsError } = await supabase
+    .from('monthly_automations_stats')
+    .select('*')
+    .eq('client_id', clientId)
+    .gte('month', new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString()) // Last 6 months
+    .order('month', { ascending: true })
+
+  if (trendsError) throw trendsError
+
+  // 3. Get Top Automations
+  const { data: topAutomations, error: automationsError } = await supabase
+    .from('automations_dashboard')
+    .select('*')
+    .eq('client_id', clientId)
+    .order('money_saved_pln', { ascending: false })
+    .limit(5)
+
+  if (automationsError) throw automationsError
+
+  return {
+    client: clientData,
+    trends: trendsData,
+    automations: topAutomations
   }
 }
 
