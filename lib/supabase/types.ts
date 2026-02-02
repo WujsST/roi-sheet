@@ -83,13 +83,14 @@ export interface WorkflowExecution {
 
 // Computed Dashboard Statistics (from RPC functions)
 export interface ComputedDashboardStats {
-  total_savings: number
+  total_savings: number              // Current month's savings
   time_saved_hours: number
   efficiency_score: number
   inaction_cost: number
   active_automations: number
   total_executions_today: number
   total_savings_all_clients: number
+  total_savings_all_time: number     // NEW: Lifetime total savings (all periods)
 }
 
 // Monthly Savings (for chart visualization)
@@ -129,4 +130,10 @@ export interface ClientDashboard {
   executions_count: number
   money_saved_pln_total: number
   saved_hours_total: number
+}
+
+// Weekly Savings (for chart visualization)
+export interface WeeklySavings {
+  week_label: string
+  money_saved_pln: number
 }
