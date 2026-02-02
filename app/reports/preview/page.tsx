@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Download, Printer, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 
 const data = [
@@ -27,59 +27,31 @@ export default function ReportPreviewPage() {
 
     setIsGenerating(true);
     try {
-      // 1. Create a temporary container for proper isolation
-      const container = document.createElement("div");
-      container.style.position = "fixed";
-      container.style.top = "0";
-      container.style.left = "0";
-      container.style.width = "210mm";
-      container.style.minHeight = "297mm";
-      container.style.backgroundColor = "white"; // Force white paper background
-      container.style.zIndex = "9999"; // On top of everything
-      container.style.overflow = "hidden"; // Prevent external scroll interference
-
-      // 2. Clone the report content
-      const clone = reportRef.current.cloneNode(true) as HTMLElement;
-
-      // Ensure the clone fills the container properly
-      clone.style.width = "100%";
-      clone.style.height = "auto";
-
-      container.appendChild(clone);
-      document.body.appendChild(container);
-
-      // 3. Generate Canvas from the isolated container
-      // Use useCORS to allow loading external images if any
-      // Use scale 2 for better quality (retina-like)
-      const canvas = await html2canvas(container, {
+      // html2canvas-pro supports oklch/lab colors natively
+      const canvas = await html2canvas(reportRef.current, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: "#ffffff",
-        windowWidth: container.scrollWidth,
-        windowHeight: container.scrollHeight
+        backgroundColor: '#ffffff'
       });
 
-      // 4. Clean up DOM
-      document.body.removeChild(container);
-
-      // 5. Generate PDF
-      const imgData = canvas.toDataURL("image/png");
+      // Generate PDF
+      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4"
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
       });
 
       const pdfWidth = 210;
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save("Raport_ROI.pdf");
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save('Raport_ROI.pdf');
 
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Wystąpił błąd podczas generowania PDF. Spróbuj ponownie.");
+      console.error('Error generating PDF:', error);
+      alert('Wystąpił błąd podczas generowania PDF. Spróbuj ponownie.');
     } finally {
       setIsGenerating(false);
     }
