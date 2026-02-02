@@ -76,9 +76,11 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
   const supabase = await createClient()
 
   // Call new RPC function that calculates stats from executions_raw
-  const { data: statsData, error } = await supabase
+  const { data: statsDataRaw, error } = await supabase
     .rpc('calculate_dashboard_stats')
-    .single() as { data: any; error: any }
+    .single()
+
+  const statsData = statsDataRaw as unknown as ComputedDashboardStats
 
   if (error) {
     console.error('Error fetching dashboard stats:', error)
@@ -114,17 +116,17 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
   console.log('[DEBUG] Active automations:', activeAutomations);
   console.log('[DEBUG] Today executions count:', todayExecutions);
 
-  const count = activeAutomations || 0
+  const count = activeAutomations ?? 0
 
   return {
-    total_savings: statsData?.total_savings || 0,
-    time_saved_hours: statsData?.time_saved_hours || 0,
-    efficiency_score: statsData?.efficiency_score || 0,
-    inaction_cost: statsData?.inaction_cost || 0,
+    total_savings: statsData?.total_savings ?? 0,
+    time_saved_hours: statsData?.time_saved_hours ?? 0,
+    efficiency_score: statsData?.efficiency_score ?? 0,
+    inaction_cost: statsData?.inaction_cost ?? 0,
     active_automations: count,
-    total_executions_today: todayExecutions || 0,
-    total_savings_all_clients: statsData?.total_savings_all_clients || 0,
-    total_savings_all_time: statsData?.total_savings_all_time || 0
+    total_executions_today: todayExecutions ?? 0,
+    total_savings_all_clients: statsData?.total_savings_all_clients ?? 0,
+    total_savings_all_time: statsData?.total_savings_all_time ?? 0
   }
 }
 
