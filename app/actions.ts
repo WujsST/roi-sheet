@@ -442,7 +442,11 @@ export async function getClientAutomations(clientId: string) {
 
 export async function updateAutomation(
   automationId: string,
-  data: { hourly_rate?: number }
+  data: {
+    hourly_rate?: number
+    manual_time_per_execution_seconds?: number
+    automation_time_per_execution_seconds?: number
+  }
 ) {
   const supabase = await createClient()
 
@@ -455,5 +459,6 @@ export async function updateAutomation(
 
   revalidatePath('/automations')
   revalidatePath('/clients')
+  revalidatePath('/')
   return { success: true }
 }

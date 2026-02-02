@@ -57,8 +57,8 @@ export function AutomationList({ automations }: AutomationListProps) {
               <div className="text-right">
                 {item.status === "healthy" ? (
                   <>
-                    <div className="text-sm font-bold text-brand-success font-mono">{formatCurrency(item.saved_today)} PLN</div>
-                    <div className="text-[10px] text-text-muted font-mono uppercase">Saved today</div>
+                    <div className="text-sm font-bold text-brand-success font-mono">{formatCurrency(item.money_saved_pln || 0)} PLN</div>
+                    <div className="text-[10px] text-text-muted font-mono uppercase">Łączne Oszczędności</div>
                   </>
                 ) : item.status === "paused" ? (
                   <>

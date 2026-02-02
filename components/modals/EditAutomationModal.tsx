@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Zap } from "lucide-react"
+import { X, Zap, Clock } from "lucide-react"
 import { updateAutomation } from "@/app/actions"
 import type { Automation } from "@/lib/supabase/types"
 
@@ -19,15 +19,21 @@ export function EditAutomationModal({
     onSuccess
 }: EditAutomationModalProps) {
     const [hourlyRate, setHourlyRate] = useState(automation.hourly_rate)
+    const [manualTime, setManualTime] = useState(automation.manual_time_per_execution_seconds ?? 300)
+    const [automationTime, setAutomationTime] = useState(automation.automation_time_per_execution_seconds ?? 30)
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     useEffect(() => {
         if (isOpen) {
             setHourlyRate(automation.hourly_rate)
+            setManualTime(automation.manual_time_per_execution_seconds ?? 300)
+            setAutomationTime(automation.automation_time_per_execution_seconds ?? 30)
         }
     }, [isOpen, automation])
 
     if (!isOpen) return null
+
+    const timeSavedPerExec = Math.max(0, manualTime - automationTime)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -36,7 +42,9 @@ export function EditAutomationModal({
         setIsSubmitting(true)
         try {
             await updateAutomation(automation.id, {
-                hourly_rate: hourlyRate
+                hourly_rate: hourlyRate,
+                manual_time_per_execution_seconds: manualTime,
+                automation_time_per_execution_seconds: automationTime
             })
 
             onSuccess?.()
@@ -71,7 +79,7 @@ export function EditAutomationModal({
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
                         <label className="mb-2 block text-sm font-bold text-white uppercase tracking-wider">
                             Stawka Godzinowa (PLN/h)
@@ -83,15 +91,57 @@ export function EditAutomationModal({
                             placeholder="100"
                             min="0"
                             step="0.01"
-                            className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-4 text-white placeholder-white/20 outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all font-mono text-lg"
+                            className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-3 text-white placeholder-white/20 outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all font-mono"
                             required
                         />
-                        <p className="mt-2 text-xs text-text-muted font-mono">
-                            Określa wartość godziny pracy zaoszczędzonej przez tę automatyzację
-                        </p>
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="mb-2 block text-xs font-bold text-white uppercase tracking-wider">
+                                Czas Manualny (sek)
+                            </label>
+                            <input
+                                type="number"
+                                value={manualTime}
+                                onChange={(e) => setManualTime(Number(e.target.value))}
+                                placeholder="300"
+                                min="0"
+                                className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white placeholder-white/20 outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all font-mono"
+                            />
+                            <p className="mt-1 text-[10px] text-text-muted font-mono">
+                                Ile trwa ręcznie?
+                            </p>
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-xs font-bold text-white uppercase tracking-wider">
+                                Czas Automatyzacji (sek)
+                            </label>
+                            <input
+                                type="number"
+                                value={automationTime}
+                                onChange={(e) => setAutomationTime(Number(e.target.value))}
+                                placeholder="30"
+                                min="0"
+                                className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white placeholder-white/20 outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all font-mono"
+                            />
+                            <p className="mt-1 text-[10px] text-text-muted font-mono">
+                                Ile trwa auto?
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Calculated savings display */}
+                    <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-4">
+                        <div className="flex items-center gap-2 text-sm text-green-400">
+                            <Clock className="h-4 w-4" />
+                            <span className="font-mono font-bold">
+                                Oszczędność: {timeSavedPerExec} sek/exec ({(timeSavedPerExec / 60).toFixed(1)} min)
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
                         <button
                             type="button"
                             onClick={onClose}
@@ -112,3 +162,4 @@ export function EditAutomationModal({
         </div>
     )
 }
+

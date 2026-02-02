@@ -92,12 +92,6 @@ export default function AutomationsPage() {
           <button className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#0f0f0f] text-text-muted hover:text-white hover:bg-white/5 transition-colors">
             <Filter className="h-4 w-4" />
           </button>
-          <Link
-            href="/automations/new"
-            className="flex items-center gap-2 rounded-full bg-white px-6 py-2 text-sm font-bold text-black hover:bg-gray-200 transition-colors font-mono uppercase tracking-wide"
-          >
-            <Play className="h-3 w-3 fill-current" /> Nowy Proces
-          </Link>
         </div>
       </div>
 

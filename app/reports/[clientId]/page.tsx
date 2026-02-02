@@ -77,9 +77,11 @@ export default function ClientReportPage({ params }: ClientReportPageProps) {
     const currentDate = new Date().toLocaleDateString('pl-PL', { year: 'numeric', month: 'long', day: 'numeric' });
     const currentMonth = new Date().toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' });
 
-    // Format trends for chart
-    const chartData = trends.map((t: any) => ({
-        name: new Date(t.month).toLocaleDateString('pl-PL', { month: 'short' }),
+    // Format trends for chart (Handling Weekly Data from RPC)
+    // The RPC returns { week_label, money_saved_pln, ... }
+    // trends is now the chartData from existing RPC
+    const chartData = (trends || []).map((t: any) => ({
+        name: t.week_label, // e.g., "Tydzień 1"
         saved: t.money_saved_pln
     }));
 
@@ -168,10 +170,10 @@ export default function ClientReportPage({ params }: ClientReportPageProps) {
                     </div>
 
                     {/* Chart Section */}
-                    {chartData.length > 0 && (
-                        <div className="mb-12">
-                            <h4 className="mb-6 text-xs font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2">Trend Oszczędności (Ostatnie 6 msc)</h4>
-                            <div className="h-64 w-full print:h-48">
+                    <div className="mb-12">
+                        <h4 className="mb-6 text-xs font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2">Trend Oszczędności (Ten Miesiąc)</h4>
+                        <div className="h-64 w-full print:h-48">
+                            {chartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={chartData}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
@@ -196,9 +198,16 @@ export default function ClientReportPage({ params }: ClientReportPageProps) {
                                         />
                                     </BarChart>
                                 </ResponsiveContainer>
-                            </div>
+                            ) : (
+                                <div className="h-full w-full flex items-center justify-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                    <p className="text-xs text-gray-400 font-mono text-center">
+                                        Brak danych o oszczędnościach w tym miesiącu.<br />
+                                        Uzupełnij stawki godzinowe i czas oszczędności w automatyzacjach.
+                                    </p>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
 
                     {/* Top Automations Table */}
                     <div className="flex-1">

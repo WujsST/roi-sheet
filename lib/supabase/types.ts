@@ -17,6 +17,9 @@ export interface Automation {
   money_saved_pln?: number
   roi_percentage?: number | null
   last_run_at?: string | null
+  // Time tracking fields for accurate Hours Back calculation
+  manual_time_per_execution_seconds?: number
+  automation_time_per_execution_seconds?: number
 }
 
 export interface SavingsHistory {

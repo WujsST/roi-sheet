@@ -25,13 +25,6 @@ export default async function DashboardPage() {
             <Calendar className="h-4 w-4 text-text-muted" />
             Styczeń 2026
           </div>
-          <Link
-            href="/automations/new"
-            className="rounded-full bg-white px-6 py-2 text-sm font-bold text-black hover:bg-gray-200 transition-colors flex items-center gap-2 font-mono uppercase"
-          >
-            <Plus className="h-4 w-4" />
-            Nowa Automatyzacja
-          </Link>
         </div>
       </div>
 
