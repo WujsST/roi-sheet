@@ -103,8 +103,8 @@ export default function ReportPreviewPage() {
       </div>
 
       {/* A4 Paper Container - Keeps white paper look for contrast */}
-      <div ref={reportRef} className="mx-auto mt-24 max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl relative z-10" style={{ aspectRatio: "210/297" }}>
-        <div className="flex h-full flex-col p-[20mm]">
+      <div ref={reportRef} className="mx-auto mt-24 max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl relative z-10 min-h-[297mm]">
+        <div className="flex flex-col p-[20mm]">
 
           {/* Report Header */}
           <div className="mb-12 flex items-start justify-between border-b border-gray-100 pb-8">
