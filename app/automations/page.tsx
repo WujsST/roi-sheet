@@ -187,6 +187,10 @@ export default function AutomationsPage() {
                       <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> {item.client_name || 'Brak klienta'}
                       </span>
+                      <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-brand-accent/10 border border-brand-accent/20">
+                        <DollarSign className="h-3 w-3 text-brand-accent" />
+                        <span className="text-brand-accent font-semibold">{item.hourly_rate} PLN/h</span>
+                      </span>
                       <span>Utworzono: {new Date(item.created_at).toLocaleDateString('pl-PL')}</span>
                     </div>
                   </div>
