@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getDashboardData } from "./actions";
 import { DashboardContent } from "@/components/DashboardContent";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const { automations, savingsHistory, stats } = await getDashboardData();
 

@@ -11,7 +11,9 @@ import type {
   Report,
   SystemLog,
   ComputedDashboardStats,
+  ComputedDashboardStats,
   MonthlySavings,
+  WeeklySavings,
   WorkflowExecution
 } from '@/lib/supabase/types'
 
@@ -89,7 +91,8 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
       inaction_cost: 0,
       active_automations: 0,
       total_executions_today: 0,
-      total_savings_all_clients: 0
+      total_savings_all_clients: 0,
+      total_savings_all_time: 0
     }
   }
 
@@ -106,6 +109,12 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
     .select('*', { count: 'exact', head: true })
     .gte('created_at', today)
 
+  // DEBUG LOGGING
+  const { data: debugExecutions } = await supabase.from('executions_raw').select('id, created_at, n8n_workflow_id').limit(5);
+  console.log('[DEBUG] Recent executions:', debugExecutions);
+  console.log('[DEBUG] Active automations:', activeAutomations);
+  console.log('[DEBUG] Today executions count:', todayExecutions);
+
   const count = activeAutomations || 0
 
   return {
@@ -115,7 +124,8 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
     inaction_cost: statsData?.inaction_cost || 0,
     active_automations: count,
     total_executions_today: todayExecutions || 0,
-    total_savings_all_clients: statsData?.total_savings_all_clients || 0
+    total_savings_all_clients: statsData?.total_savings_all_clients || 0,
+    total_savings_all_time: statsData?.total_savings_all_time || 0
   }
 }
 
@@ -131,15 +141,16 @@ export async function getClientReportData(clientId: string) {
 
   if (clientError) throw clientError
 
-  // 2. Get Monthly Trends for Chart
-  const { data: trendsData, error: trendsError } = await supabase
-    .from('monthly_automations_stats')
-    .select('*')
-    .eq('client_id', clientId)
-    .gte('month', new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString()) // Last 6 months
-    .order('month', { ascending: true })
+  // 2. Get Weekly Chart Data (Real Data via RPC)
+  const now = new Date()
+  const { data: chartData, error: chartError } = await supabase
+    .rpc('get_monthly_savings_chart', {
+      p_year: now.getFullYear(),
+      p_month: now.getMonth() + 1, // JS months are 0-indexed, Postgres 1-indexed
+      p_client_id: clientId
+    })
 
-  if (trendsError) throw trendsError
+  if (chartError) throw chartError
 
   // 3. Get Top Automations
   const { data: topAutomations, error: automationsError } = await supabase
@@ -153,19 +164,35 @@ export async function getClientReportData(clientId: string) {
 
   return {
     client: clientData,
-    trends: trendsData,
+    trends: chartData, // Corrected variable name
     automations: topAutomations
   }
 }
 
-export async function getMonthlySavingsData(): Promise<MonthlySavings[]> {
+export async function getMonthlySavingsData() {
   const supabase = await createClient()
-  const { data } = await supabase
-    .from('v_monthly_savings')
-    .select('*')
-    .order('month_date', { ascending: true })
 
-  return (data || []) as MonthlySavings[]
+  const now = new Date()
+  const { data, error } = await supabase
+    .rpc('get_monthly_savings_chart', {
+      p_year: now.getFullYear(),
+      p_month: now.getMonth() + 1,
+      p_client_id: null // Explicitly pass null
+    })
+
+  console.log('[DEBUG] getMonthlySavingsData raw data:', data)
+
+  if (error) {
+    console.error('Error fetching monthly savings chart:', error)
+    return []
+  }
+
+  // Map to match expected ChartCard format (WeeklySavings)
+  // RPC returns: week_label, week_start, executions_count, money_saved_pln
+  return (data || []).map((item: any) => ({
+    week_label: item.week_label,
+    money_saved_pln: Number(item.money_saved_pln || 0)
+  }))
 }
 
 export async function getWorkflowExecutions(limit = 100): Promise<WorkflowExecution[]> {
@@ -240,7 +267,7 @@ export async function createNewAutomation(data: {
     name: validated.name,
     icon: validated.icon,
     hourly_rate: validated.hourlyRate,
-    workflow_id: validated.workflowId,
+    n8n_workflow_id: validated.workflowId, // Changed from workflow_id to match DB schema
     client_id: clientId,
     client_name: '', // Will be filled by database trigger or view
     status: 'healthy' as const,
