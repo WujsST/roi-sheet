@@ -2,15 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutGrid, 
-  Workflow, 
-  Users, 
-  FileText, 
-  Settings, 
+import {
+  LayoutGrid,
+  Workflow,
+  Users,
+  FileText,
+  Settings,
   LogOut,
   ChevronRight,
-  Database,
   ScrollText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,7 +18,6 @@ const menuItems = [
   { name: "Dashboard", icon: LayoutGrid, href: "/" },
   { name: "Automatyzacje", icon: Workflow, href: "/automations" },
   { name: "Klienci", icon: Users, href: "/clients" },
-  { name: "Baza Danych", icon: Database, href: "/database" },
   { name: "Logi", icon: ScrollText, href: "/logs" },
   { name: "Raporty", icon: FileText, href: "/reports" },
   { name: "Ustawienia", icon: Settings, href: "/settings" },
