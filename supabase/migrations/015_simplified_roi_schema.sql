@@ -101,32 +101,7 @@ COMMENT ON VIEW automations_dashboard IS
 'Automations with ROI metrics calculated from direct join to executions_raw';
 
 -- ============================================================================
--- 5. Create clients_dashboard View
--- ============================================================================
-
-CREATE OR REPLACE VIEW public.clients_dashboard AS
-SELECT
-  c.id as client_id,
-  c.name as client_name,
-
-  -- Aggregated counts
-  COUNT(DISTINCT a.id) as automations_count,
-  COUNT(er.id) as executions_count,
-
-  -- Aggregated savings
-  SUM(((COUNT(er.id) * a.seconds_saved_per_execution) / 3600.0) * a.hourly_rate) as money_saved_pln_total,
-  SUM((COUNT(er.id) * a.seconds_saved_per_execution) / 3600.0) as saved_hours_total
-
-FROM public.clients c
-LEFT JOIN public.automations a ON a.client_id = c.id
-LEFT JOIN public.executions_raw er ON er.n8n_workflow_id = a.n8n_workflow_id
-GROUP BY c.id, c.name;
-
-COMMENT ON VIEW clients_dashboard IS
-'Aggregated ROI metrics per client';
-
--- ============================================================================
--- 6. Create Monthly Automations Stats View (for filtering by month)
+-- 5. Create Monthly Automations Stats View (for filtering by month)
 -- ============================================================================
 
 CREATE OR REPLACE VIEW public.monthly_automations_stats AS
@@ -147,6 +122,31 @@ GROUP BY a.id, a.name, a.client_id, DATE_TRUNC('month', er.created_at);
 
 COMMENT ON VIEW monthly_automations_stats IS
 'Automations with ROI metrics aggregated by month from executions_raw. Used for monthly filtering and barcharts.';
+
+-- ============================================================================
+-- 6. Create clients_dashboard View
+-- ============================================================================
+
+CREATE OR REPLACE VIEW public.clients_dashboard AS
+SELECT
+  c.id as client_id,
+  c.name as client_name,
+
+  -- Aggregated counts
+  COUNT(DISTINCT a.id) as automations_count,
+  COALESCE(SUM(stats.executions_count), 0) as executions_count,
+
+  -- Aggregated savings (from monthly_automations_stats)
+  COALESCE(SUM(stats.money_saved_pln), 0) as money_saved_pln_total,
+  COALESCE(SUM(stats.saved_hours), 0) as saved_hours_total
+
+FROM public.clients c
+LEFT JOIN public.automations a ON a.client_id = c.id
+LEFT JOIN public.monthly_automations_stats stats ON stats.automation_id = a.id
+GROUP BY c.id, c.name;
+
+COMMENT ON VIEW clients_dashboard IS
+'Aggregated ROI metrics per client from monthly_automations_stats';
 
 -- ============================================================================
 -- 7. Create Monthly Savings History View (for barcharts)

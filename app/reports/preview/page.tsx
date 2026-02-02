@@ -27,33 +27,43 @@ export default function ReportPreviewPage() {
 
     setIsGenerating(true);
     try {
-      // Hide header, sidebar, and set white background
-      const header = document.querySelector('.no-print') as HTMLElement;
-      const sidebar = document.querySelector('aside') as HTMLElement;
-      const body = document.body;
+      // 1. Create a temporary container for proper isolation
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.top = "0";
+      container.style.left = "0";
+      container.style.width = "210mm";
+      container.style.minHeight = "297mm";
+      container.style.backgroundColor = "white"; // Force white paper background
+      container.style.zIndex = "9999"; // On top of everything
+      container.style.overflow = "hidden"; // Prevent external scroll interference
 
-      const originalHeaderDisplay = header?.style.display || '';
-      const originalSidebarDisplay = sidebar?.style.display || '';
-      const originalBodyBg = body.style.background || '';
+      // 2. Clone the report content
+      const clone = reportRef.current.cloneNode(true) as HTMLElement;
 
-      if (header) header.style.display = 'none';
-      if (sidebar) sidebar.style.display = 'none';
-      body.style.background = 'white';
+      // Ensure the clone fills the container properly
+      clone.style.width = "100%";
+      clone.style.height = "auto";
 
-      // Wait for DOM to update
-      await new Promise(resolve => setTimeout(resolve, 100));
+      container.appendChild(clone);
+      document.body.appendChild(container);
 
-      const canvas = await html2canvas(reportRef.current, {
-        logging: false,
+      // 3. Generate Canvas from the isolated container
+      // Use useCORS to allow loading external images if any
+      // Use scale 2 for better quality (retina-like)
+      const canvas = await html2canvas(container, {
+        scale: 2,
         useCORS: true,
-        background: '#ffffff'
+        logging: false,
+        backgroundColor: "#ffffff",
+        windowWidth: container.scrollWidth,
+        windowHeight: container.scrollHeight
       });
 
-      // Restore elements
-      if (header) header.style.display = originalHeaderDisplay;
-      if (sidebar) sidebar.style.display = originalSidebarDisplay;
-      body.style.background = originalBodyBg;
+      // 4. Clean up DOM
+      document.body.removeChild(container);
 
+      // 5. Generate PDF
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -61,11 +71,12 @@ export default function ReportPreviewPage() {
         format: "a4"
       });
 
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdfWidth = 210;
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save("Raport_ROI.pdf");
+
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Wystąpił błąd podczas generowania PDF. Spróbuj ponownie.");
@@ -114,8 +125,8 @@ export default function ReportPreviewPage() {
       </div>
 
       {/* A4 Paper Container - Keeps white paper look for contrast */}
-      <div ref={reportRef} className="mx-auto mt-24 max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl relative z-10 min-h-[297mm]">
-        <div className="flex flex-col p-[20mm]">
+      <div className="mx-auto mt-24 max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl relative z-10 min-h-[297mm]">
+        <div ref={reportRef} className="flex flex-col p-[20mm]">
 
           {/* Report Header */}
           <div className="mb-12 flex items-start justify-between border-b border-gray-100 pb-8">
