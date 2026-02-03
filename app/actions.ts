@@ -69,8 +69,32 @@ export async function deleteReport(reportId: string) {
 
   if (error) throw error
 
+  if (error) throw error
   revalidatePath('/reports')
   return { success: true }
+}
+
+export async function getApiKey() {
+  const supabase = await createClient()
+  const { data } = await supabase.from('app_settings').select('value').eq('key', 'api_key').single()
+  return data?.value || 'roi_live_not_set'
+}
+
+export async function generateNewApiKey() {
+  const supabase = await createClient()
+  // Generate a random key format roi_live_ak_...
+  const randomPart = Array.from(crypto.getRandomValues(new Uint8Array(24)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('').substring(0, 32);
+
+  const newKey = `roi_live_ak_${randomPart}`
+
+  const { error } = await supabase
+    .from('app_settings')
+    .upsert({ key: 'api_key', value: newKey, updated_at: new Date().toISOString() })
+
+  if (error) throw error
+  return newKey
 }
 
 // Execution Log type for logs page

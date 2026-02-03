@@ -2,17 +2,22 @@
 
 import { Settings, User, Lock, Save, Copy, Check, Eye, EyeOff, FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getApiKey, generateNewApiKey } from "@/app/actions";
 
 export default function SettingsPage() {
    const [isKeyVisible, setIsKeyVisible] = useState(false);
    const [copiedKey, setCopiedKey] = useState(false);
    const [copiedWebhook, setCopiedWebhook] = useState(false);
 
-   const [apiKey, setApiKey] = useState("roi_live_ak_8f92a3b4c5d6e7f8g9h0i1j2k3l4");
+   const [apiKey, setApiKey] = useState("Ładowanie...");
    const [isGenerating, setIsGenerating] = useState(false);
 
    const webhookUrl = "https://app.roisheet.com/api/webhook/execution";
+
+   useEffect(() => {
+      getApiKey().then(setApiKey);
+   }, []);
 
    const copyToClipboard = (text: string, type: 'key' | 'webhook') => {
       navigator.clipboard.writeText(text);
@@ -25,17 +30,18 @@ export default function SettingsPage() {
       }
    };
 
-   const generateNewKey = () => {
+   const generateNewKey = async () => {
       setIsGenerating(true);
-      // Simulate API call
-      setTimeout(() => {
-         const randomString = Array.from(crypto.getRandomValues(new Uint8Array(20)))
-            .map(b => b.toString(16).padStart(2, '0'))
-            .join('');
-         setApiKey(`roi_live_ak_${randomString}`);
+      try {
+         const newKey = await generateNewApiKey();
+         setApiKey(newKey);
+         setIsKeyVisible(true);
+      } catch (error) {
+         console.error("Failed to generate key:", error);
+         alert("Błąd generowania klucza API");
+      } finally {
          setIsGenerating(false);
-         setIsKeyVisible(true); // Show new key automatically
-      }, 1000);
+      }
    };
 
    return (
