@@ -13,6 +13,7 @@ import {
   ScrollText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUser, UserButton } from "@clerk/nextjs";
 
 const menuItems = [
   { name: "Dashboard", icon: LayoutGrid, href: "/" },
@@ -25,6 +26,12 @@ const menuItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, isLoaded } = useUser();
+
+  // Hide sidebar on auth pages
+  if (pathname?.startsWith("/sign-in") || pathname?.startsWith("/sign-up")) {
+    return null;
+  }
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border-subtle bg-bg-sidebar transition-transform max-md:-translate-x-full font-sans">
@@ -66,19 +73,25 @@ export function Sidebar() {
 
         {/* User Profile */}
         <div className="mt-auto pt-6">
-          <div className="group flex items-center gap-3 rounded-full border border-border-subtle bg-white/5 p-2 pr-4 transition-colors hover:border-white/20 cursor-pointer">
-            <div className="h-10 w-10 overflow-hidden rounded-full bg-brand-accent flex items-center justify-center text-white font-bold font-display">
-              DS
+          <div className="group flex items-center gap-3 rounded-full border border-border-subtle bg-white/5 p-2 pr-4 transition-colors hover:border-white/20">
+            <div className="h-10 w-10 flex items-center justify-center">
+              <UserButton
+                afterSignOutUrl="/sign-in"
+                appearance={{
+                  elements: {
+                    avatarBox: "h-10 w-10"
+                  }
+                }}
+              />
             </div>
             <div className="flex-1 overflow-hidden">
               <p className="truncate text-sm font-semibold text-white">
-                Dawid Stępień
+                {isLoaded ? (user?.fullName || user?.firstName || "Użytkownik") : "..."}
               </p>
               <p className="truncate text-xs text-text-muted">
-                Pro Plan
+                {isLoaded ? (user?.primaryEmailAddress?.emailAddress || "Pro Plan") : "..."}
               </p>
             </div>
-            <ChevronRight className="h-4 w-4 text-text-muted group-hover:text-white" />
           </div>
         </div>
       </div>
