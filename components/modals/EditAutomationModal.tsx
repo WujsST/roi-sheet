@@ -68,19 +68,20 @@ export function EditAutomationModal({
                 await assignClientToAutomation(automation.id, clientId)
             }
 
-            // Update rate, manual time, and source
+            // Update rate and manual time
+            // NOTE: source field will be saved once migration 020 is applied
             const minutes = parseInt(manualTimeMinutes) || 0
             await updateAutomation(automation.id, {
                 hourly_rate: rate,
-                manual_time_per_execution_seconds: minutes * 60,
-                source: source
+                manual_time_per_execution_seconds: minutes * 60
             })
 
             onSuccess?.()
             onClose()
         } catch (error) {
             console.error("Error updating automation:", error)
-            alert("Błąd podczas zapisywania zmian")
+            const errorMessage = error instanceof Error ? error.message : 'Nieznany błąd'
+            alert(`Błąd podczas zapisywania zmian: ${errorMessage}`)
         } finally {
             setIsSubmitting(false)
         }
