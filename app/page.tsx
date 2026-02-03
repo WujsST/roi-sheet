@@ -1,12 +1,17 @@
 import { Plus, Calendar } from "lucide-react";
 import Link from "next/link";
-import { getDashboardData } from "./actions";
+import { getDashboardData, getErrorExecutions } from "./actions";
 import { DashboardContent } from "@/components/DashboardContent";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const { automations, savingsHistory, stats } = await getDashboardData();
+  const [dashboardData, errorExecutions] = await Promise.all([
+    getDashboardData(),
+    getErrorExecutions().catch(() => [])
+  ]);
+
+  const { automations, savingsHistory, stats } = dashboardData;
 
   return (
     <div className="space-y-8 pb-20">
@@ -32,7 +37,9 @@ export default async function DashboardPage() {
         automations={automations}
         savingsHistory={savingsHistory}
         stats={stats}
+        errorExecutions={errorExecutions}
       />
     </div>
   );
 }
+

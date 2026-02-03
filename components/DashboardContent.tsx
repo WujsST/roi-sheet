@@ -5,18 +5,29 @@ import { StatCard } from "@/components/StatCard";
 import { ChartCard } from "@/components/ChartCard";
 import { AutomationList } from "@/components/AutomationList";
 import { ReportPreviewWidget } from "@/components/ReportPreviewWidget";
+import { WorkflowErrorsAlert } from "@/components/WorkflowErrorsAlert";
 import { Wallet, Clock, Zap, AlertTriangle, Users } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import type { Automation, WeeklySavings, ComputedDashboardStats } from "@/lib/supabase/types";
 import { formatCurrency } from "@/lib/utils";
 
+interface ErrorExecution {
+  id: string;
+  n8n_workflow_id: string;
+  workflow_name?: string | null;
+  status: string;
+  created_at: string;
+  error_message?: string | null;
+}
+
 interface DashboardContentProps {
   automations: Automation[];
   savingsHistory: WeeklySavings[];
   stats: ComputedDashboardStats | null;
+  errorExecutions?: ErrorExecution[];
 }
 
-export function DashboardContent({ automations, savingsHistory, stats }: DashboardContentProps) {
+export function DashboardContent({ automations, savingsHistory, stats, errorExecutions = [] }: DashboardContentProps) {
   console.log("[DashboardContent] savingsHistory:", savingsHistory);
   console.log("[DashboardContent] savingsHistory.length:", savingsHistory?.length);
 
@@ -103,9 +114,13 @@ export function DashboardContent({ automations, savingsHistory, stats }: Dashboa
           <AutomationList automations={automations} />
         </BentoItem>
 
-        {/* Row 3: Report Preview Widget */}
+        {/* Row 3: Report Preview Widget + Workflow Errors */}
         <BentoItem key="report" className="col-span-1 md:col-span-2 min-h-[400px]">
           <ReportPreviewWidget />
+        </BentoItem>
+
+        <BentoItem key="errors" className="col-span-1 md:col-span-2 min-h-[400px]">
+          <WorkflowErrorsAlert errors={errorExecutions} />
         </BentoItem>
       </AnimatePresence>
     </BentoGrid>

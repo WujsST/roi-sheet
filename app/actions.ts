@@ -516,3 +516,36 @@ export async function updateAutomation(
   revalidatePath('/')
   return { success: true }
 }
+
+// Get recent error executions for dashboard alert
+export async function getErrorExecutions() {
+  const supabase = await createClient()
+
+  // Get recent errors from last 24 hours
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  const { data: errors, error } = await supabase
+    .from('executions_raw')
+    .select('*')
+    .eq('status', 'error')
+    .gte('created_at', yesterday.toISOString())
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  if (error) throw error
+
+  // Get automation names
+  const { data: automations } = await supabase
+    .from('automations')
+    .select('n8n_workflow_id, name')
+
+  const automationMap = new Map(
+    automations?.map(a => [a.n8n_workflow_id, a.name]) || []
+  )
+
+  return (errors || []).map(e => ({
+    ...e,
+    workflow_name: automationMap.get(e.n8n_workflow_id) || null
+  }))
+}
