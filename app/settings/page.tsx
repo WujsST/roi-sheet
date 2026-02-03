@@ -1,9 +1,10 @@
 "use client";
 
-import { Settings, User, Lock, Save, Copy, Check, Eye, EyeOff, FileText, ArrowRight } from "lucide-react";
+import { Settings, User, Lock, Copy, Check, Eye, EyeOff, FileText, ArrowRight, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getApiKey, generateNewApiKey } from "@/app/actions";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 export default function SettingsPage() {
    const [isKeyVisible, setIsKeyVisible] = useState(false);
@@ -12,6 +13,9 @@ export default function SettingsPage() {
 
    const [apiKey, setApiKey] = useState("Ładowanie...");
    const [isGenerating, setIsGenerating] = useState(false);
+
+   const { user, isLoaded } = useUser();
+   const { openUserProfile, signOut } = useClerk();
 
    const webhookUrl = "https://app.roisheet.com/api/webhook/execution";
 
@@ -68,25 +72,67 @@ export default function SettingsPage() {
                </div>
 
                <div className="flex gap-8">
-                  <div className="shrink-0">
-                     <div className="h-24 w-24 rounded-full bg-brand-accent flex items-center justify-center text-3xl font-bold text-white mb-4">DS</div>
-                     <button className="text-xs text-brand-accent hover:underline font-mono uppercase tracking-wide">Zmień Avatar</button>
+                  <div className="shrink-0 flex flex-col items-center gap-4">
+                     {isLoaded && user?.imageUrl ? (
+                        <img
+                           src={user.imageUrl}
+                           alt="Avatar"
+                           className="h-24 w-24 rounded-full border-2 border-white/10"
+                        />
+                     ) : (
+                        <div className="h-24 w-24 rounded-full bg-brand-accent flex items-center justify-center text-3xl font-bold text-white mb-4">
+                           {user?.firstName?.[0] || "U"}
+                        </div>
+                     )}
+                     <button
+                        onClick={() => openUserProfile()}
+                        className="text-xs text-brand-accent hover:underline font-mono uppercase tracking-wide"
+                     >
+                        Zarządzaj Kontem
+                     </button>
                   </div>
 
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
                      <div>
                         <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Imię</label>
-                        <input type="text" defaultValue="Dawid" className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors" />
+                        <input
+                           type="text"
+                           value={user?.firstName || ""}
+                           readOnly
+                           disabled
+                           className="w-full rounded-xl border border-white/5 bg-[#111] px-4 py-3 text-text-muted cursor-not-allowed"
+                        />
                      </div>
                      <div>
                         <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Nazwisko</label>
-                        <input type="text" defaultValue="Stępień" className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors" />
+                        <input
+                           type="text"
+                           value={user?.lastName || ""}
+                           readOnly
+                           disabled
+                           className="w-full rounded-xl border border-white/5 bg-[#111] px-4 py-3 text-text-muted cursor-not-allowed"
+                        />
                      </div>
                      <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Email</label>
-                        <input type="email" defaultValue="dawid@roisheet.com" className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors" />
+                        <input
+                           type="email"
+                           value={user?.primaryEmailAddress?.emailAddress || ""}
+                           readOnly
+                           disabled
+                           className="w-full rounded-xl border border-white/5 bg-[#111] px-4 py-3 text-text-muted cursor-not-allowed"
+                        />
                      </div>
                   </div>
+               </div>
+
+               <div className="mt-8 flex justify-end border-t border-white/5 pt-6">
+                  <button
+                     onClick={() => signOut({ redirectUrl: '/sign-in' })}
+                     className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-500/20 transition-colors uppercase tracking-wide"
+                  >
+                     <LogOut className="h-4 w-4" /> Wyloguj się
+                  </button>
                </div>
             </section>
 
@@ -197,12 +243,7 @@ export default function SettingsPage() {
                </div>
             </section>
 
-            {/* Save Button */}
-            <div className="flex justify-end pt-4">
-               <button className="flex items-center gap-2 rounded-full bg-white px-8 py-3 text-sm font-bold text-black hover:bg-gray-200 transition-colors shadow-lg shadow-white/5">
-                  <Save className="h-4 w-4" /> Zapisz Zmiany
-               </button>
-            </div>
+
 
          </div>
       </div>
