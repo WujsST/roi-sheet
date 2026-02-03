@@ -9,9 +9,10 @@ export default function SettingsPage() {
    const [copiedKey, setCopiedKey] = useState(false);
    const [copiedWebhook, setCopiedWebhook] = useState(false);
 
-   // Mock data for now
+   const [apiKey, setApiKey] = useState("roi_live_ak_8f92a3b4c5d6e7f8g9h0i1j2k3l4");
+   const [isGenerating, setIsGenerating] = useState(false);
+
    const webhookUrl = "https://app.roisheet.com/api/webhook/execution";
-   const apiKey = "roi_live_ak_8f92a3b4c5d6e7f8g9h0i1j2k3l4"; // This would come from DB prop in real implementation
 
    const copyToClipboard = (text: string, type: 'key' | 'webhook') => {
       navigator.clipboard.writeText(text);
@@ -22,6 +23,19 @@ export default function SettingsPage() {
          setCopiedWebhook(true);
          setTimeout(() => setCopiedWebhook(false), 2000);
       }
+   };
+
+   const generateNewKey = () => {
+      setIsGenerating(true);
+      // Simulate API call
+      setTimeout(() => {
+         const randomString = Array.from(crypto.getRandomValues(new Uint8Array(20)))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+         setApiKey(`roi_live_ak_${randomString}`);
+         setIsGenerating(false);
+         setIsKeyVisible(true); // Show new key automatically
+      }, 1000);
    };
 
    return (
@@ -121,8 +135,19 @@ export default function SettingsPage() {
                            <h3 className="font-bold text-white text-sm">Klucz API</h3>
                            <p className="text-xs text-text-muted mt-1">Służy do autoryzacji zapytań webhooka.</p>
                         </div>
-                        <button className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-xs font-bold text-indigo-400 hover:bg-indigo-500/20 transition-colors uppercase tracking-wide">
-                           Generuj Nowy
+                        <button
+                           onClick={generateNewKey}
+                           disabled={isGenerating}
+                           className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-xs font-bold text-indigo-400 hover:bg-indigo-500/20 transition-colors uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                           {isGenerating ? (
+                              <>
+                                 <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                                 Generowanie...
+                              </>
+                           ) : (
+                              "Generuj Nowy"
+                           )}
                         </button>
                      </div>
                      <div className="flex items-center gap-2 bg-[#000] p-3 rounded-lg border border-white/10">
