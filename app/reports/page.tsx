@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Download, Printer, Search, Calendar, Filter, Plus, AlertCircle, X, Users } from "lucide-react";
+import { FileText, Download, Printer, Search, Calendar, Filter, Plus, AlertCircle, X, Users, Trash } from "lucide-react";
 import Link from "next/link";
-import { getReportsData, getClientsData } from "@/app/actions";
+import { getReportsData, getClientsData, deleteReport } from "@/app/actions";
 import type { Report, Client } from "@/lib/supabase/types";
 
 export default function ReportsPage() {
@@ -37,6 +37,20 @@ export default function ReportsPage() {
   const handleGenerateReport = (clientId: string) => {
     setIsModalOpen(false);
     router.push(`/reports/${clientId}`);
+  };
+
+  const handleDeleteReport = async (reportId: string, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent link navigation if inside link, though button is separate
+    e.stopPropagation();
+    if (!confirm('Czy na pewno chcesz usunąć ten raport?')) return;
+
+    try {
+      await deleteReport(reportId);
+      setReports((prev) => prev.filter((r) => r.id !== reportId));
+    } catch (err) {
+      console.error('Failed to delete report:', err);
+      alert('Nie udało się usunąć raportu.');
+    }
   };
 
   return (
@@ -128,6 +142,13 @@ export default function ReportsPage() {
                   </Link>
                   <button className="h-10 w-10 flex items-center justify-center rounded-full bg-white text-black hover:scale-110 transition-transform">
                     <Download className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteReport(report.id, e)}
+                    className="h-10 w-10 flex items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 hover:scale-110 transition-transform"
+                    title="Usuń raport"
+                  >
+                    <Trash className="h-5 w-5" />
                   </button>
                 </div>
               </div>

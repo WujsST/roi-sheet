@@ -59,6 +59,20 @@ export async function getReportsData() {
   return data as Report[]
 }
 
+export async function deleteReport(reportId: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('reports')
+    .delete()
+    .eq('id', reportId)
+
+  if (error) throw error
+
+  revalidatePath('/reports')
+  return { success: true }
+}
+
 // Execution Log type for logs page
 export interface ExecutionLog {
   id: string
