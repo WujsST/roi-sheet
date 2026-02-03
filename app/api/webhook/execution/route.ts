@@ -12,24 +12,41 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
 }
 
-// Simple API key validation (you should set this in your env)
-const API_KEY = process.env.WEBHOOK_API_KEY || 'roi-sheet-webhook-key-change-me'
-
 export async function OPTIONS() {
     return NextResponse.json({}, { headers: corsHeaders })
 }
 
 export async function POST(request: NextRequest) {
     try {
+        // Initialize Supabase client
+        const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
         // Check API key
         const apiKey = request.headers.get('x-api-key') || request.headers.get('authorization')?.replace('Bearer ', '')
 
-        if (apiKey !== API_KEY) {
+        if (!apiKey) {
             return NextResponse.json(
-                { error: 'Unauthorized', message: 'Invalid or missing API key' },
+                { error: 'Unauthorized', message: 'Missing API key' },
                 { status: 401, headers: corsHeaders }
             )
         }
+
+        // Validate API Key against app_settings to find the user
+        const { data: userSettings, error: authError } = await supabase
+            .from('app_settings')
+            .select('user_id')
+            .eq('key', 'api_key')
+            .eq('value', apiKey)
+            .single()
+
+        if (authError || !userSettings) {
+            return NextResponse.json(
+                { error: 'Unauthorized', message: 'Invalid API key' },
+                { status: 401, headers: corsHeaders }
+            )
+        }
+
+        const userId = userSettings.user_id;
 
         // Parse request body
         const body = await request.json()
@@ -62,15 +79,13 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Initialize Supabase client
-        const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
         // Prepare execution record - only core columns
         const executionRecord: Record<string, unknown> = {
             n8n_workflow_id: workflow_id,
             n8n_execution_id: execution_id || `webhook-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             status: status,
-            created_at: started_at || new Date().toISOString()
+            created_at: started_at || new Date().toISOString(),
+            user_id: userId // Associate with the user who owns the API Key
         }
 
         // Add finished_at if provided

@@ -28,11 +28,6 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, isLoaded } = useUser();
 
-  // Hide sidebar on auth pages
-  if (pathname?.startsWith("/sign-in") || pathname?.startsWith("/sign-up")) {
-    return null;
-  }
-
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border-subtle bg-bg-sidebar transition-transform max-md:-translate-x-full font-sans">
       <div className="flex h-full flex-col px-4 py-8">

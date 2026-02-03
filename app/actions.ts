@@ -82,6 +82,10 @@ export async function getApiKey() {
 
 export async function generateNewApiKey() {
   const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
   // Generate a random key format roi_live_ak_...
   const randomPart = Array.from(crypto.getRandomValues(new Uint8Array(24)))
     .map(b => b.toString(16).padStart(2, '0'))
@@ -91,7 +95,12 @@ export async function generateNewApiKey() {
 
   const { error } = await supabase
     .from('app_settings')
-    .upsert({ key: 'api_key', value: newKey, updated_at: new Date().toISOString() })
+    .upsert({
+      user_id: user.id,
+      key: 'api_key',
+      value: newKey,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id, key' })
 
   if (error) throw error
   return newKey

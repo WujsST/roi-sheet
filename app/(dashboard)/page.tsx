@@ -1,6 +1,6 @@
 import { Plus, Calendar } from "lucide-react";
 import Link from "next/link";
-import { getDashboardData, getErrorExecutions } from "./actions";
+import { getDashboardData, getErrorExecutions } from "@/app/actions";
 import { DashboardContent } from "@/components/DashboardContent";
 
 export const dynamic = "force-dynamic";
