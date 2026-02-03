@@ -427,6 +427,29 @@ export async function updateClient(
   return { success: true }
 }
 
+export async function deleteClient(clientId: string) {
+  const supabase = await createClient()
+
+  // First, unassign all automations from this client
+  await supabase
+    .from('automations')
+    .update({ client_id: null })
+    .eq('client_id', clientId)
+
+  // Then delete the client
+  const { error } = await supabase
+    .from('clients')
+    .delete()
+    .eq('id', clientId)
+
+  if (error) throw error
+
+  revalidatePath('/clients')
+  revalidatePath('/automations')
+  revalidatePath('/')
+  return { success: true }
+}
+
 export async function assignAutomationsToClient(
   clientId: string,
   automationIds: string[]

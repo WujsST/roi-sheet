@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Users, MoreHorizontal, TrendingUp, Zap, Building2, Plus, ArrowUpRight, AlertCircle, Edit, ChevronDown, FileText } from "lucide-react";
+import { Users, MoreHorizontal, TrendingUp, Zap, Building2, Plus, ArrowUpRight, AlertCircle, Edit, ChevronDown, FileText, Trash2 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
-import { getClientsData, getAutomationsData } from "@/app/actions";
+import { getClientsData, getAutomationsData, deleteClient } from "@/app/actions";
 import type { Client, Automation } from "@/lib/supabase/types";
 import { AddClientModal } from "@/components/modals/AddClientModal"
 import { EditClientModal } from "@/components/modals/EditClientModal"
@@ -140,10 +140,29 @@ export default function ClientsPage() {
                         onClick={() => {
                           router.push(`/reports/${client.id}`)
                         }}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors rounded-xl"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/5 transition-colors"
                       >
                         <FileText className="h-4 w-4" />
                         Generuj Raport
+                      </button>
+                      <div className="border-t border-white/10 my-1" />
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Czy na pewno chcesz usunąć klienta "${client.name}"? Ta operacja jest nieodwracalna.`)) {
+                            try {
+                              await deleteClient(client.id)
+                              setClients(clients.filter(c => c.id !== client.id))
+                              setOpenDropdown(null)
+                            } catch (e) {
+                              console.error('Error deleting client:', e)
+                              alert('Błąd podczas usuwania klienta')
+                            }
+                          }
+                        }}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors rounded-b-xl"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Usuń klienta
                       </button>
                     </div>
                   )}
