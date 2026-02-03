@@ -171,8 +171,8 @@ export default function ClientReportPage() {
                     <div className="mb-10">
                         <h4 className="mb-4 text-xs font-bold uppercase tracking-widest text-gray-400 border-b border-gray-100 pb-2">Podsumowanie</h4>
                         <p className="text-gray-700 leading-relaxed text-sm">
-                            W tym miesiącu automatyzacje dla {client.client_name} przetworzyły łącznie <span className="font-bold text-gray-900">{formatCurrency(client.total_executions)} zadań</span>,
-                            co przełożyło się na bezpośrednią oszczędność <span className="font-bold text-green-600">{formatCurrency(client.total_savings_pln)} PLN</span>.
+                            W tym miesiącu automatyzacje dla {client.client_name} przetworzyły łącznie <span className="font-bold text-gray-900">{formatCurrency(client.total_executions ?? 0)} zadań</span>,
+                            co przełożyło się na bezpośrednią oszczędność <span className="font-bold text-green-600">{formatCurrency(client.total_savings_pln ?? 0)} PLN</span>.
                             Zaoszczędzono <span className="font-bold text-gray-900">{client.total_hours_saved}h</span> czasu pracy.
                             {client.avg_roi_percentage > 0 && ` Średni ROI wyniósł ${client.avg_roi_percentage.toFixed(0)}%.`}
                         </p>
@@ -182,7 +182,7 @@ export default function ClientReportPage() {
                     <div className="mb-12 grid grid-cols-3 gap-6">
                         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
                             <div className="mb-2 text-xs font-bold uppercase text-gray-500 tracking-wider">Oszczędności</div>
-                            <div className="text-4xl font-bold text-gray-900 font-display">{formatCurrency(client.total_savings_pln)}</div>
+                            <div className="text-4xl font-bold text-gray-900 font-display">{formatCurrency(client.total_savings_pln ?? 0)}</div>
                             <div className="mt-2 text-xs text-gray-500">PLN</div>
                         </div>
                         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
@@ -192,7 +192,7 @@ export default function ClientReportPage() {
                         </div>
                         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
                             <div className="mb-2 text-xs font-bold uppercase text-gray-500 tracking-wider">Zadania</div>
-                            <div className="text-4xl font-bold text-gray-900 font-display">{formatCurrency(client.total_executions)}</div>
+                            <div className="text-4xl font-bold text-gray-900 font-display">{formatCurrency(client.total_executions ?? 0)}</div>
                             <div className="mt-2 text-xs text-gray-500">Przetworzone</div>
                         </div>
                     </div>
@@ -246,8 +246,8 @@ export default function ClientReportPage() {
                                     {automations.slice(0, 5).map((automation, index) => (
                                         <tr key={automation.id} className={index < automations.length - 1 ? "border-b border-gray-50" : ""}>
                                             <td className="py-4 px-4 font-bold text-gray-900">{automation.name}</td>
-                                            <td className="py-4 px-4 text-right font-mono">{formatCurrency(automation.executions_count)}</td>
-                                            <td className="py-4 px-4 text-right font-bold text-green-600 font-mono">{formatCurrency(automation.money_saved_pln)}</td>
+                                            <td className="py-4 px-4 text-right font-mono">{formatCurrency(automation.executions_count ?? 0)}</td>
+                                            <td className="py-4 px-4 text-right font-bold text-green-600 font-mono">{formatCurrency(automation.money_saved_pln ?? 0)}</td>
                                         </tr>
                                     ))}
                                 </tbody>

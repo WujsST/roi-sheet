@@ -5,11 +5,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(value: number, options?: {
+export function formatCurrency(value: unknown, options?: {
   minimumFractionDigits?: number
   maximumFractionDigits?: number
 }): string {
-  return value.toLocaleString('pl-PL', {
+  const num = Number(value ?? 0);
+
+  if (!Number.isFinite(num)) return "0";
+
+  return num.toLocaleString('pl-PL', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
     ...options

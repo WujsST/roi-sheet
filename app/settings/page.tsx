@@ -3,76 +3,137 @@
 import { Settings, User, Lock, Bell, Save } from "lucide-react";
 
 export default function SettingsPage() {
-  return (
-    <div className="space-y-8 pb-20 max-w-4xl">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white font-display tracking-tight flex items-center gap-3">
-          <Settings className="h-8 w-8 text-text-muted" />
-          Ustawienia
-        </h1>
-        <p className="text-text-muted mt-2 font-mono text-xs uppercase tracking-widest">
-          Konfiguracja profilu, integracji i bezpieczeństwa
-        </p>
+   return (
+      <div className="space-y-8 pb-20 max-w-4xl">
+         {/* Header */}
+         <div>
+            <h1 className="text-3xl font-bold text-white font-display tracking-tight flex items-center gap-3">
+               <Settings className="h-8 w-8 text-text-muted" />
+               Ustawienia
+            </h1>
+            <p className="text-text-muted mt-2 font-mono text-xs uppercase tracking-widest">
+               Konfiguracja profilu, integracji i bezpieczeństwa
+            </p>
+         </div>
+
+         {/* Sections Container */}
+         <div className="space-y-8">
+
+            {/* Profile Section */}
+            <section className="rounded-3xl border border-white/10 bg-[#0a0a0a] p-8">
+               <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
+                  <User className="h-5 w-5 text-white" />
+                  <h2 className="text-lg font-bold text-white font-display">Profil Użytkownika</h2>
+               </div>
+
+               <div className="flex gap-8">
+                  <div className="shrink-0">
+                     <div className="h-24 w-24 rounded-full bg-brand-accent flex items-center justify-center text-3xl font-bold text-white mb-4">DS</div>
+                     <button className="text-xs text-brand-accent hover:underline font-mono uppercase tracking-wide">Zmień Avatar</button>
+                  </div>
+
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div>
+                        <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Imię</label>
+                        <input type="text" defaultValue="Dawid" className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors" />
+                     </div>
+                     <div>
+                        <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Nazwisko</label>
+                        <input type="text" defaultValue="Stępień" className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors" />
+                     </div>
+                     <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Email</label>
+                        <input type="email" defaultValue="dawid@roisheet.com" className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors" />
+                     </div>
+                  </div>
+               </div>
+            </section>
+
+            {/* Security Section */}
+            <section className="rounded-3xl border border-white/10 bg-[#0a0a0a] p-8">
+               <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
+                  <Lock className="h-5 w-5 text-white" />
+                  <h2 className="text-lg font-bold text-white font-display">Bezpieczeństwo</h2>
+               </div>
+
+               <div className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-[#111]">
+                  <div>
+                     <h3 className="font-bold text-white text-sm">Dwuskładnikowe Uwierzytelnianie (2FA)</h3>
+                     <p className="text-xs text-text-muted mt-1">Dodatkowa warstwa ochrony konta.</p>
+                  </div>
+                  <button className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-white hover:bg-white/10 uppercase tracking-wider">Włącz</button>
+               </div>
+            </section>
+
+            {/* API & Integrations Section */}
+            <section className="rounded-3xl border border-white/10 bg-[#0a0a0a] p-8">
+               <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
+                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                  </div>
+                  <h2 className="text-lg font-bold text-white font-display">API & Integracje</h2>
+               </div>
+
+               <div className="space-y-6">
+                  <div className="p-4 rounded-xl border border-white/5 bg-[#111]">
+                     <h3 className="font-bold text-white text-sm mb-2">Twój Webhook URL</h3>
+                     <p className="text-xs text-text-muted mb-4 leading-relaxed">
+                        Użyj tego adresu URL, aby przesyłać dane o wykonaniach automatyzacji z platform takich jak n8n, Zapier czy Make.
+                     </p>
+                     <div className="flex items-center gap-2 bg-[#000] p-3 rounded-lg border border-white/10 group relative">
+                        <code className="text-xs text-indigo-300 font-mono flex-1 font-bold truncate">
+                           https://app.roisheet.com/api/webhook/execution
+                        </code>
+                        <button className="text-xs text-text-muted hover:text-white px-2 py-1 rounded transition-colors bg-white/5 hover:bg-white/10">
+                           Kopiuj
+                        </button>
+                     </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-white/5 bg-[#111]">
+                     <div className="flex items-start justify-between mb-4">
+                        <div>
+                           <h3 className="font-bold text-white text-sm">Klucz API</h3>
+                           <p className="text-xs text-text-muted mt-1">Służy do autoryzacji zapytań webhooka.</p>
+                        </div>
+                        <button className="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-xs font-bold text-indigo-400 hover:bg-indigo-500/20 transition-colors uppercase tracking-wide">
+                           Generuj Nowy
+                        </button>
+                     </div>
+                     <div className="flex items-center gap-2 bg-[#000] p-3 rounded-lg border border-white/10">
+                        <div className="flex-1 flex items-center gap-1.5">
+                           <span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
+                           <code className="text-xs text-text-muted font-mono">roi_live_********************</code>
+                        </div>
+                        <button className="text-xs text-text-muted hover:text-white px-2 py-1 rounded transition-colors bg-white/5 hover:bg-white/10">
+                           Pokaż
+                        </button>
+                     </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 pt-2">
+                     <a
+                        href="/api/webhook/execution"
+                        target="_blank"
+                        className="flex items-center gap-2 text-xs font-bold text-text-muted hover:text-white transition-colors group"
+                     >
+                        <div className="p-1.5 rounded-md bg-white/5 group-hover:bg-white/10">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+                        </div>
+                        Dokumentacja API
+                     </a>
+                  </div>
+               </div>
+            </section>
+
+            {/* Save Button */}
+            <div className="flex justify-end pt-4">
+               <button className="flex items-center gap-2 rounded-full bg-white px-8 py-3 text-sm font-bold text-black hover:bg-gray-200 transition-colors shadow-lg shadow-white/5">
+                  <Save className="h-4 w-4" /> Zapisz Zmiany
+               </button>
+            </div>
+
+         </div>
       </div>
-
-      {/* Sections Container */}
-      <div className="space-y-8">
-        
-        {/* Profile Section */}
-        <section className="rounded-3xl border border-white/10 bg-[#0a0a0a] p-8">
-          <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
-             <User className="h-5 w-5 text-white" />
-             <h2 className="text-lg font-bold text-white font-display">Profil Użytkownika</h2>
-          </div>
-          
-          <div className="flex gap-8">
-             <div className="shrink-0">
-                <div className="h-24 w-24 rounded-full bg-brand-accent flex items-center justify-center text-3xl font-bold text-white mb-4">DS</div>
-                <button className="text-xs text-brand-accent hover:underline font-mono uppercase tracking-wide">Zmień Avatar</button>
-             </div>
-             
-             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                   <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Imię</label>
-                   <input type="text" defaultValue="Dawid" className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors" />
-                </div>
-                <div>
-                   <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Nazwisko</label>
-                   <input type="text" defaultValue="Stępień" className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors" />
-                </div>
-                <div className="md:col-span-2">
-                   <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Email</label>
-                   <input type="email" defaultValue="dawid@roisheet.com" className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors" />
-                </div>
-             </div>
-          </div>
-        </section>
-
-        {/* Security Section */}
-        <section className="rounded-3xl border border-white/10 bg-[#0a0a0a] p-8">
-          <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
-             <Lock className="h-5 w-5 text-white" />
-             <h2 className="text-lg font-bold text-white font-display">Bezpieczeństwo</h2>
-          </div>
-          
-          <div className="flex items-center justify-between p-4 rounded-xl border border-white/5 bg-[#111]">
-             <div>
-                <h3 className="font-bold text-white text-sm">Dwuskładnikowe Uwierzytelnianie (2FA)</h3>
-                <p className="text-xs text-text-muted mt-1">Dodatkowa warstwa ochrony konta.</p>
-             </div>
-             <button className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-white hover:bg-white/10 uppercase tracking-wider">Włącz</button>
-          </div>
-        </section>
-
-        {/* Save Button */}
-        <div className="flex justify-end pt-4">
-           <button className="flex items-center gap-2 rounded-full bg-white px-8 py-3 text-sm font-bold text-black hover:bg-gray-200 transition-colors shadow-lg shadow-white/5">
-              <Save className="h-4 w-4" /> Zapisz Zmiany
-           </button>
-        </div>
-
-      </div>
-    </div>
-  );
+   );
 }
