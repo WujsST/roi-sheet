@@ -1,9 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Zap, Info, Users, Clock, DollarSign, Edit3 } from "lucide-react"
+import { X, Zap, Info, Users, Clock, DollarSign, Edit3, Cpu } from "lucide-react"
 import { updateAutomation, assignClientToAutomation, updateAutomationName } from "@/app/actions"
 import type { Automation, Client } from "@/lib/supabase/types"
+
+const AUTOMATION_SOURCES = [
+    { value: 'n8n', label: 'n8n' },
+    { value: 'zapier', label: 'Zapier' },
+    { value: 'make', label: 'Make (Integromat)' },
+    { value: 'retell', label: 'Retell' },
+    { value: 'custom', label: 'Custom Script' },
+    { value: 'other', label: 'Inne' },
+]
 
 interface EditAutomationModalProps {
     isOpen: boolean
@@ -22,10 +31,11 @@ export function EditAutomationModal({
 }: EditAutomationModalProps) {
     const [name, setName] = useState(automation.name || '')
     const [clientId, setClientId] = useState(automation.client_id || '')
-    const [hourlyRate, setHourlyRate] = useState(automation.hourly_rate)
-    // Convert seconds to minutes for display
+    const [hourlyRate, setHourlyRate] = useState(String(automation.hourly_rate || 0))
+    const [source, setSource] = useState(automation.source || 'n8n')
+    // Convert seconds to minutes for display - use string for better input handling
     const [manualTimeMinutes, setManualTimeMinutes] = useState(
-        Math.round((automation.manual_time_per_execution_seconds ?? 300) / 60)
+        String(Math.round((automation.manual_time_per_execution_seconds ?? 300) / 60))
     )
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -33,8 +43,9 @@ export function EditAutomationModal({
         if (isOpen) {
             setName(automation.name || '')
             setClientId(automation.client_id || '')
-            setHourlyRate(automation.hourly_rate)
-            setManualTimeMinutes(Math.round((automation.manual_time_per_execution_seconds ?? 300) / 60))
+            setHourlyRate(String(automation.hourly_rate || 0))
+            setSource(automation.source || 'n8n')
+            setManualTimeMinutes(String(Math.round((automation.manual_time_per_execution_seconds ?? 300) / 60)))
         }
     }, [isOpen, automation])
 
@@ -42,24 +53,27 @@ export function EditAutomationModal({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (hourlyRate <= 0) return
+        const rate = parseFloat(hourlyRate) || 0
+        if (rate <= 0) return
 
         setIsSubmitting(true)
         try {
             // Update name if changed
-            if (name !== automation.name) {
+            if (name !== automation.name && name.trim()) {
                 await updateAutomationName(automation.id, name)
             }
 
             // Update client if changed
-            if (clientId !== automation.client_id) {
+            if (clientId !== (automation.client_id || '')) {
                 await assignClientToAutomation(automation.id, clientId)
             }
 
-            // Update rate and manual time (convert minutes back to seconds)
+            // Update rate, manual time, and source
+            const minutes = parseInt(manualTimeMinutes) || 0
             await updateAutomation(automation.id, {
-                hourly_rate: hourlyRate,
-                manual_time_per_execution_seconds: manualTimeMinutes * 60
+                hourly_rate: rate,
+                manual_time_per_execution_seconds: minutes * 60,
+                source: source
             })
 
             onSuccess?.()
@@ -78,7 +92,7 @@ export function EditAutomationModal({
             onClick={onClose}
         >
             <div
-                className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#0a0a0a] p-8 shadow-2xl animate-in zoom-in-95 duration-200"
+                className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#0a0a0a] p-8 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -133,6 +147,28 @@ export function EditAutomationModal({
                         </select>
                     </div>
 
+                    {/* Source/Technology Selection */}
+                    <div>
+                        <label className="mb-2 flex items-center gap-2 text-sm font-bold text-white uppercase tracking-wider">
+                            <Cpu className="h-4 w-4 text-text-muted" />
+                            Technologia / Źródło
+                        </label>
+                        <select
+                            value={source}
+                            onChange={(e) => setSource(e.target.value)}
+                            className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all cursor-pointer"
+                        >
+                            {AUTOMATION_SOURCES.map((s) => (
+                                <option key={s.value} value={s.value}>
+                                    {s.label}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="mt-1 text-xs text-text-muted font-mono">
+                            Platforma odpowiadająca za tę automatyzację
+                        </p>
+                    </div>
+
                     {/* Hourly Rate */}
                     <div>
                         <label className="mb-2 flex items-center gap-2 text-sm font-bold text-white uppercase tracking-wider">
@@ -140,29 +176,27 @@ export function EditAutomationModal({
                             Stawka Godzinowa (PLN/h)
                         </label>
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
                             value={hourlyRate}
-                            onChange={(e) => setHourlyRate(Number(e.target.value))}
+                            onChange={(e) => setHourlyRate(e.target.value)}
                             placeholder="100"
-                            min="0"
-                            step="0.01"
                             className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-3 text-white placeholder-white/20 outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all font-mono"
-                            required
                         />
                     </div>
 
-                    {/* Manual Time (in MINUTES) */}
+                    {/* Manual Time (in MINUTES) - using text input for better UX */}
                     <div>
                         <label className="mb-2 flex items-center gap-2 text-sm font-bold text-white uppercase tracking-wider">
                             <Clock className="h-4 w-4 text-text-muted" />
                             Czas Manualny (minuty)
                         </label>
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
                             value={manualTimeMinutes}
-                            onChange={(e) => setManualTimeMinutes(Number(e.target.value))}
+                            onChange={(e) => setManualTimeMinutes(e.target.value)}
                             placeholder="5"
-                            min="0"
                             className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-3 text-white placeholder-white/20 outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all font-mono"
                         />
                         <p className="mt-1 text-xs text-text-muted font-mono">
@@ -170,12 +204,12 @@ export function EditAutomationModal({
                         </p>
                     </div>
 
-                    {/* Info about dynamic automation time */}
+                    {/* Info about calculation */}
                     <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
                         <div className="flex items-start gap-2 text-sm text-blue-400">
                             <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
                             <span className="font-mono text-xs">
-                                Czas egzekucji automatyzacji obliczany jest automatycznie z rzeczywistych danych n8n
+                                Hours Back = ilość egzekucji × czas manualny ÷ 60
                             </span>
                         </div>
                     </div>
@@ -190,7 +224,7 @@ export function EditAutomationModal({
                         </button>
                         <button
                             type="submit"
-                            disabled={isSubmitting || hourlyRate <= 0}
+                            disabled={isSubmitting || (parseFloat(hourlyRate) || 0) <= 0}
                             className="flex-1 rounded-full bg-brand-accent px-6 py-3 font-bold text-white hover:bg-brand-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? "Zapisuję..." : "Zapisz Zmiany"}

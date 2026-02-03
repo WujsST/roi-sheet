@@ -20,6 +20,8 @@ export interface Automation {
   // Time tracking fields for accurate Hours Back calculation
   manual_time_per_execution_seconds?: number
   automation_time_per_execution_seconds?: number
+  // Technology/platform source
+  source?: string
 }
 
 export interface SavingsHistory {

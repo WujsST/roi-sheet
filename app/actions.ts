@@ -476,6 +476,7 @@ export async function updateAutomation(
     hourly_rate?: number
     manual_time_per_execution_seconds?: number
     automation_time_per_execution_seconds?: number
+    source?: string
   }
 ) {
   const supabase = await createClient()
