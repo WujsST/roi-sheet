@@ -226,7 +226,7 @@ export default function AutomationsPage() {
                     {item.status === "healthy" ? (
                       <>
                         <div className="text-lg font-bold text-brand-success font-display">
-                          {item.saved_today} PLN
+                          {(item.money_saved_pln || 0).toFixed(0)} PLN
                         </div>
                         <div className="text-[10px] text-brand-success/70 font-mono uppercase tracking-wider flex items-center justify-end gap-1">
                           <CheckCircle2 className="h-3 w-3" /> Healthy

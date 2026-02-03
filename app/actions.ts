@@ -59,15 +59,45 @@ export async function getReportsData() {
   return data as Report[]
 }
 
-export async function getLogsData() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('system_logs')
-    .select('*')
-    .order('timestamp', { ascending: false })
+// Execution Log type for logs page
+export interface ExecutionLog {
+  id: string
+  n8n_execution_id: string
+  n8n_workflow_id: string
+  status: 'success' | 'error' | 'running' | 'waiting'
+  mode: string
+  finished: boolean
+  started_at: string
+  stopped_at: string | null
+  created_at: string
+  workflow_name?: string | null
+}
 
-  if (error) throw error
-  return data as SystemLog[]
+export async function getLogsData(): Promise<ExecutionLog[]> {
+  const supabase = await createClient()
+
+  // Get executions with workflow names from automations
+  const { data: executions, error: execError } = await supabase
+    .from('executions_raw')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(100)
+
+  if (execError) throw execError
+
+  // Get automation names for workflow IDs
+  const { data: automations } = await supabase
+    .from('automations')
+    .select('n8n_workflow_id, name')
+
+  const automationMap = new Map(
+    automations?.map(a => [a.n8n_workflow_id, a.name]) || []
+  )
+
+  return (executions || []).map(e => ({
+    ...e,
+    workflow_name: automationMap.get(e.n8n_workflow_id) || null
+  })) as ExecutionLog[]
 }
 
 // === NEW WORKFLOW EXECUTION TRACKING FUNCTIONS ===

@@ -1,10 +1,9 @@
-import { Terminal, AlertCircle } from "lucide-react";
-import { getLogsData } from "@/app/actions";
-import type { SystemLog } from "@/lib/supabase/types";
+import { Activity, AlertCircle } from "lucide-react";
+import { getLogsData, type ExecutionLog } from "@/app/actions";
 import LogsClient from "./logs-client";
 
 export default async function LogsPage() {
-  let logs: SystemLog[] = [];
+  let logs: ExecutionLog[] = [];
   let error: Error | null = null;
 
   try {
@@ -19,11 +18,11 @@ export default async function LogsPage() {
       {/* Header */}
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold text-white font-display tracking-tight flex items-center gap-3">
-          <Terminal className="h-8 w-8 text-text-muted" />
-          Logi Systemowe
+          <Activity className="h-8 w-8 text-text-muted" />
+          Logi Egzekucji
         </h1>
         <p className="text-text-muted font-mono text-xs uppercase tracking-widest">
-          Historia zdarzeń i operacji w czasie rzeczywistym
+          Historia wykonań automatyzacji n8n
         </p>
       </div>
 
