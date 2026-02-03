@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Zap, Clock, Info } from "lucide-react"
-import { updateAutomation } from "@/app/actions"
-import type { Automation } from "@/lib/supabase/types"
+import { X, Zap, Info, Users, Clock, DollarSign, Edit3 } from "lucide-react"
+import { updateAutomation, assignClientToAutomation, updateAutomationName } from "@/app/actions"
+import type { Automation, Client } from "@/lib/supabase/types"
 
 interface EditAutomationModalProps {
     isOpen: boolean
     onClose: () => void
     automation: Automation
+    clients: Client[]
     onSuccess?: () => void
 }
 
@@ -16,16 +17,24 @@ export function EditAutomationModal({
     isOpen,
     onClose,
     automation,
+    clients,
     onSuccess
 }: EditAutomationModalProps) {
+    const [name, setName] = useState(automation.name || '')
+    const [clientId, setClientId] = useState(automation.client_id || '')
     const [hourlyRate, setHourlyRate] = useState(automation.hourly_rate)
-    const [manualTime, setManualTime] = useState(automation.manual_time_per_execution_seconds ?? 300)
+    // Convert seconds to minutes for display
+    const [manualTimeMinutes, setManualTimeMinutes] = useState(
+        Math.round((automation.manual_time_per_execution_seconds ?? 300) / 60)
+    )
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     useEffect(() => {
         if (isOpen) {
+            setName(automation.name || '')
+            setClientId(automation.client_id || '')
             setHourlyRate(automation.hourly_rate)
-            setManualTime(automation.manual_time_per_execution_seconds ?? 300)
+            setManualTimeMinutes(Math.round((automation.manual_time_per_execution_seconds ?? 300) / 60))
         }
     }, [isOpen, automation])
 
@@ -37,9 +46,20 @@ export function EditAutomationModal({
 
         setIsSubmitting(true)
         try {
+            // Update name if changed
+            if (name !== automation.name) {
+                await updateAutomationName(automation.id, name)
+            }
+
+            // Update client if changed
+            if (clientId !== automation.client_id) {
+                await assignClientToAutomation(automation.id, clientId)
+            }
+
+            // Update rate and manual time (convert minutes back to seconds)
             await updateAutomation(automation.id, {
                 hourly_rate: hourlyRate,
-                manual_time_per_execution_seconds: manualTime
+                manual_time_per_execution_seconds: manualTimeMinutes * 60
             })
 
             onSuccess?.()
@@ -53,8 +73,14 @@ export function EditAutomationModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#0a0a0a] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={onClose}
+        >
+            <div
+                className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#0a0a0a] p-8 shadow-2xl animate-in zoom-in-95 duration-200"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <button
                     onClick={onClose}
                     className="absolute right-4 top-4 rounded-full p-2 text-text-muted hover:bg-white/5 hover:text-white transition-colors"
@@ -67,16 +93,50 @@ export function EditAutomationModal({
                         <div className="rounded-full bg-brand-accent/10 p-2">
                             <Zap className="h-5 w-5 text-brand-accent" />
                         </div>
-                        <h2 className="text-2xl font-bold text-white font-display">Edytuj Automatyzację</h2>
+                        <h2 className="text-2xl font-bold text-white font-display">Ustawienia Automatyzacji</h2>
                     </div>
-                    <p className="text-sm text-text-muted font-mono">
-                        {automation.name || 'Unnamed automation'}
-                    </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Name */}
                     <div>
-                        <label className="mb-2 block text-sm font-bold text-white uppercase tracking-wider">
+                        <label className="mb-2 flex items-center gap-2 text-sm font-bold text-white uppercase tracking-wider">
+                            <Edit3 className="h-4 w-4 text-text-muted" />
+                            Nazwa
+                        </label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Nazwa automatyzacji..."
+                            className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-3 text-white placeholder-white/20 outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all"
+                        />
+                    </div>
+
+                    {/* Client Selection */}
+                    <div>
+                        <label className="mb-2 flex items-center gap-2 text-sm font-bold text-white uppercase tracking-wider">
+                            <Users className="h-4 w-4 text-text-muted" />
+                            Klient
+                        </label>
+                        <select
+                            value={clientId}
+                            onChange={(e) => setClientId(e.target.value)}
+                            className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-3 text-white outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all cursor-pointer"
+                        >
+                            <option value="">Brak przypisanego klienta</option>
+                            {clients.map((client) => (
+                                <option key={client.id} value={client.id}>
+                                    {client.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Hourly Rate */}
+                    <div>
+                        <label className="mb-2 flex items-center gap-2 text-sm font-bold text-white uppercase tracking-wider">
+                            <DollarSign className="h-4 w-4 text-text-muted" />
                             Stawka Godzinowa (PLN/h)
                         </label>
                         <input
@@ -91,20 +151,22 @@ export function EditAutomationModal({
                         />
                     </div>
 
+                    {/* Manual Time (in MINUTES) */}
                     <div>
-                        <label className="mb-2 block text-sm font-bold text-white uppercase tracking-wider">
-                            Czas Manualny (sek)
+                        <label className="mb-2 flex items-center gap-2 text-sm font-bold text-white uppercase tracking-wider">
+                            <Clock className="h-4 w-4 text-text-muted" />
+                            Czas Manualny (minuty)
                         </label>
                         <input
                             type="number"
-                            value={manualTime}
-                            onChange={(e) => setManualTime(Number(e.target.value))}
-                            placeholder="300"
+                            value={manualTimeMinutes}
+                            onChange={(e) => setManualTimeMinutes(Number(e.target.value))}
+                            placeholder="5"
                             min="0"
                             className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-3 text-white placeholder-white/20 outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all font-mono"
                         />
                         <p className="mt-1 text-xs text-text-muted font-mono">
-                            Ile sekund trwałoby zrobienie tego ręcznie?
+                            Ile minut trwałoby zrobienie tego ręcznie?
                         </p>
                     </div>
 
@@ -112,8 +174,8 @@ export function EditAutomationModal({
                     <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
                         <div className="flex items-start gap-2 text-sm text-blue-400">
                             <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                            <span className="font-mono">
-                                Czas automatyzacji obliczany jest automatycznie z rzeczywistych egzekucji n8n
+                            <span className="font-mono text-xs">
+                                Czas egzekucji automatyzacji obliczany jest automatycznie z rzeczywistych danych n8n
                             </span>
                         </div>
                     </div>
@@ -139,4 +201,3 @@ export function EditAutomationModal({
         </div>
     )
 }
-

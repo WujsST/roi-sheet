@@ -3,15 +3,13 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Play, MoreHorizontal, Zap, Calendar, Database, Globe, Settings, Bell, Bot, ArrowRight, Edit3, User, DollarSign, TrendingUp, Clock } from "lucide-react";
+import { Workflow, Search, Filter, Mail, FileText, UserPlus, AlertCircle, CheckCircle2, Zap, Calendar, Database, Globe, Settings, Bell, Bot, ArrowRight, DollarSign, TrendingUp, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAutomationsData, getClientsData, getUnlinkedWorkflows } from "@/app/actions";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import type { Automation, Client } from "@/lib/supabase/types";
 import { AddAutomationModal } from "@/components/modals/AddAutomationModal"
-import { AssignClientModal } from "@/components/modals/AssignClientModal"
-import { RenameWorkflowModal } from "@/components/modals/RenameWorkflowModal"
 import { EditAutomationModal } from "@/components/modals/EditAutomationModal"
 import { UnnamedWorkflowAlert } from "@/components/UnnamedWorkflowAlert"
 
@@ -41,29 +39,32 @@ export default function AutomationsPage() {
   const [error, setError] = useState<Error | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedAutomation, setSelectedAutomation] = useState<Automation | null>(null)
-  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false)
-  const [isAssignClientModalOpen, setIsAssignClientModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+
+  const refreshData = async () => {
+    try {
+      const [automationsData, clientsData, unlinkedData] = await Promise.all([
+        getAutomationsData(),
+        getClientsData(),
+        getUnlinkedWorkflows()
+      ])
+      setAutomations(automationsData)
+      setClients(clientsData)
+      setUnlinkedWorkflows(unlinkedData)
+    } catch (e) {
+      setError(e as Error)
+      console.error('Error fetching data:', e)
+    }
+  }
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const [automationsData, clientsData, unlinkedData] = await Promise.all([
-          getAutomationsData(),
-          getClientsData(),
-          getUnlinkedWorkflows()
-        ])
-        setAutomations(automationsData)
-        setClients(clientsData)
-        setUnlinkedWorkflows(unlinkedData)
-      } catch (e) {
-        setError(e as Error)
-        console.error('Error fetching data:', e)
-      }
-    }
-    fetchData()
+    refreshData()
   }, [])
+
+  const handleCardClick = (automation: Automation) => {
+    setSelectedAutomation(automation)
+    setIsEditModalOpen(true)
+  }
 
   return (
     <div className="space-y-8 pb-20">
@@ -168,15 +169,16 @@ export default function AutomationsPage() {
             return (
               <div
                 key={item.id}
-                className="group relative flex items-center justify-between rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 transition-all hover:border-white/30 hover:bg-[#0f0f0f]"
+                onClick={() => handleCardClick(item)}
+                className="group relative flex items-center justify-between rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 transition-all hover:border-brand-accent/50 hover:bg-[#0f0f0f] cursor-pointer"
               >
                 {/* Left: Icon & Info */}
                 <div className="flex items-center gap-6">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/5 text-white border border-white/10 group-hover:bg-white/10 group-hover:border-white/20 transition-colors">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/5 text-white border border-white/10 group-hover:bg-brand-accent/10 group-hover:border-brand-accent/20 transition-colors">
                     <IconComponent className="h-6 w-6" />
                   </div>
                   <div>
-                    <div className="font-bold text-white font-display text-lg tracking-tight mb-1">{item.name}</div>
+                    <div className="font-bold text-white font-display text-lg tracking-tight mb-1 group-hover:text-brand-accent transition-colors">{item.name}</div>
                     <div className="flex items-center gap-3 text-xs font-mono text-text-muted">
                       <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> {item.client_name || 'Brak klienta'}
@@ -248,54 +250,6 @@ export default function AutomationsPage() {
                       </>
                     )}
                   </div>
-
-                  {/* Menu */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
-                      className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-white transition-colors"
-                    >
-                      <MoreHorizontal className="h-5 w-5" />
-                    </button>
-
-                    {openMenuId === item.id && (
-                      <div className="absolute right-0 top-10 z-10 w-48 rounded-xl border border-white/10 bg-[#0a0a0a] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                        <button
-                          onClick={() => {
-                            setSelectedAutomation(item)
-                            setIsRenameModalOpen(true)
-                            setOpenMenuId(null)
-                          }}
-                          className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/5 transition-colors rounded-t-xl flex items-center gap-2"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                          Zmień nazwę
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedAutomation(item)
-                            setIsEditModalOpen(true)
-                            setOpenMenuId(null)
-                          }}
-                          className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/5 transition-colors flex items-center gap-2"
-                        >
-                          <DollarSign className="h-4 w-4" />
-                          Edytuj stawkę
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedAutomation(item)
-                            setIsAssignClientModalOpen(true)
-                            setOpenMenuId(null)
-                          }}
-                          className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/5 transition-colors rounded-b-xl flex items-center gap-2"
-                        >
-                          <User className="h-4 w-4" />
-                          Przypisz klienta
-                        </button>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             );
@@ -309,49 +263,26 @@ export default function AutomationsPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={() => {
-          // Refresh data
-          getAutomationsData().then(setAutomations)
+          refreshData()
           router.refresh()
         }}
         availableClients={clients}
       />
 
       {selectedAutomation && (
-        <>
-          <RenameWorkflowModal
-            isOpen={isRenameModalOpen}
-            onClose={() => {
-              setIsRenameModalOpen(false)
-              setSelectedAutomation(null)
-            }}
-            automationId={selectedAutomation.id}
-            currentName={selectedAutomation.name}
-          />
-
-          <AssignClientModal
-            isOpen={isAssignClientModalOpen}
-            onClose={() => {
-              setIsAssignClientModalOpen(false)
-              setSelectedAutomation(null)
-            }}
-            automationId={selectedAutomation.id}
-            automationName={selectedAutomation.name || 'Unnamed automation'}
-            clients={clients}
-          />
-
-          <EditAutomationModal
-            isOpen={isEditModalOpen}
-            onClose={() => {
-              setIsEditModalOpen(false)
-              setSelectedAutomation(null)
-            }}
-            automation={selectedAutomation}
-            onSuccess={() => {
-              getAutomationsData().then(setAutomations)
-              router.refresh()
-            }}
-          />
-        </>
+        <EditAutomationModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false)
+            setSelectedAutomation(null)
+          }}
+          automation={selectedAutomation}
+          clients={clients}
+          onSuccess={() => {
+            refreshData()
+            router.refresh()
+          }}
+        />
       )}
     </div>
   );
