@@ -105,22 +105,23 @@ export function DashboardContent({ automations, savingsHistory, stats, errorExec
           />
         </BentoItem>
 
-        {/* Row 2: Charts & Lists */}
-        <BentoItem key="chart" className="col-span-1 md:col-span-2 min-h-[400px]">
+        {/* Row 2: Chart + Errors side by side */}
+        <BentoItem key="chart" className="col-span-1 md:col-span-3 min-h-[400px]">
           <ChartCard data={savingsHistory} />
         </BentoItem>
 
+        <BentoItem key="errors" className="col-span-1 min-h-[400px]">
+          <WorkflowErrorsAlert errors={errorExecutions} />
+        </BentoItem>
+
+        {/* Row 3: Automation List */}
         <BentoItem key="list" className="col-span-1 md:col-span-2 min-h-[400px]">
           <AutomationList automations={automations} />
         </BentoItem>
 
-        {/* Row 3: Report Preview Widget + Workflow Errors */}
+        {/* Row 4: Report Preview Widget */}
         <BentoItem key="report" className="col-span-1 md:col-span-2 min-h-[400px]">
           <ReportPreviewWidget />
-        </BentoItem>
-
-        <BentoItem key="errors" className="col-span-1 md:col-span-2 min-h-[400px]">
-          <WorkflowErrorsAlert errors={errorExecutions} />
         </BentoItem>
       </AnimatePresence>
     </BentoGrid>
