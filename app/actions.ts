@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { clientSchema, automationSchema } from '@/lib/validations'
 import { revalidatePath } from 'next/cache'
+import { auth } from '@clerk/nextjs/server'
 import type {
   Automation,
   SavingsHistory,
@@ -83,8 +84,9 @@ export async function getApiKey() {
 export async function generateNewApiKey() {
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('User not authenticated')
+  // Authenticate user
+  const { userId } = await auth()
+  if (!userId) throw new Error('User not authenticated')
 
   // Generate a random key format roi_live_ak_...
   const randomPart = Array.from(crypto.getRandomValues(new Uint8Array(24)))
@@ -96,7 +98,7 @@ export async function generateNewApiKey() {
   const { error } = await supabase
     .from('app_settings')
     .upsert({
-      user_id: user.id,
+      user_id: userId,
       key: 'api_key',
       value: newKey,
       updated_at: new Date().toISOString()
@@ -294,6 +296,10 @@ export async function createNewClient(data: {
 }) {
   const supabase = await createClient()
 
+  // Authenticate user
+  const { userId } = await auth()
+  if (!userId) throw new Error('User not authenticated')
+
   // Validate with Zod
   const validated = clientSchema.parse(data)
 
@@ -307,7 +313,8 @@ export async function createNewClient(data: {
       status: 'active',
       automations_count: validated.automationIds.length,
       roi_percentage: 0,
-      saved_amount: 0
+      saved_amount: 0,
+      user_id: userId
     })
     .select()
     .single()
@@ -337,6 +344,10 @@ export async function createNewAutomation(data: {
 }) {
   const supabase = await createClient()
 
+  // Authenticate user
+  const { userId } = await auth()
+  if (!userId) throw new Error('User not authenticated')
+
   // Validate with Zod
   const validated = automationSchema.parse(data)
 
@@ -349,7 +360,8 @@ export async function createNewAutomation(data: {
     client_id: clientId,
     client_name: '', // Will be filled by database trigger or view
     status: 'healthy' as const,
-    saved_today: 0
+    saved_today: 0,
+    user_id: userId
   }))
 
   const { data: result, error } = await supabase

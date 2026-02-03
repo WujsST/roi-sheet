@@ -122,6 +122,12 @@ export default function SettingsPage() {
                            disabled
                            className="w-full rounded-xl border border-white/5 bg-[#111] px-4 py-3 text-text-muted cursor-not-allowed"
                         />
+                        <div className="mt-2 flex items-center gap-2">
+                           <span className="text-[10px] uppercase tracking-widest text-text-muted/50 font-bold">User ID</span>
+                           <code className="text-[10px] font-mono text-text-muted select-all cursor-text bg-white/5 px-2 py-0.5 rounded border border-white/5 hover:bg-white/10 hover:border-white/10 transition-colors">
+                              {user?.id}
+                           </code>
+                        </div>
                      </div>
                   </div>
                </div>
