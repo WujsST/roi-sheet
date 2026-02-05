@@ -68,7 +68,7 @@ export function EditAutomationModal({
                 await assignClientToAutomation(automation.id, clientId)
             }
 
-            // Update rate and manual time
+            // Update rate and manual time field
             // NOTE: source field will be saved once migration 020 is applied
             const minutes = parseInt(manualTimeMinutes) || 0
             await updateAutomation(automation.id, {
@@ -210,7 +210,7 @@ export function EditAutomationModal({
                         <div className="flex items-start gap-2 text-sm text-blue-400">
                             <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
                             <span className="font-mono text-xs">
-                                Hours Back = ilość egzekucji × czas manualny ÷ 60
+                                Czas zaoszczędzony = ilość egzekucji × czas manualny
                             </span>
                         </div>
                     </div>

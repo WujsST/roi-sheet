@@ -32,7 +32,8 @@ export function AddAutomationModal({ isOpen, onClose, onSuccess, availableClient
     icon: '',
     hourlyRate: 150,
     workflowId: '',
-    clientIds: [] as string[]
+    clientIds: [] as string[],
+    manualTimeMinutes: 5
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -71,7 +72,7 @@ export function AddAutomationModal({ isOpen, onClose, onSuccess, availableClient
       await createNewAutomation(formData)
 
       // Reset and close
-      setFormData({ name: '', icon: '', hourlyRate: 150, workflowId: '', clientIds: [] })
+      setFormData({ name: '', icon: '', hourlyRate: 150, workflowId: '', clientIds: [], manualTimeMinutes: 5 })
       setErrors({})
       onSuccess()
       onClose()
@@ -172,6 +173,26 @@ export function AddAutomationModal({ isOpen, onClose, onSuccess, availableClient
           />
           {errors.workflowId && (
             <p className="text-xs text-red-400 mt-1">{errors.workflowId}</p>
+          )}
+        </div>
+
+        {/* Manual Time */}
+        <div>
+          <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+            Czas Manualny (minuty)
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="480"
+            value={formData.manualTimeMinutes}
+            onChange={(e) => handleChange('manualTimeMinutes', parseInt(e.target.value) || 0)}
+            className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors font-mono"
+            placeholder="5"
+          />
+          <p className="text-xs text-text-muted mt-1">Ile minut trwałoby wykonanie ręcznie?</p>
+          {errors.manualTimeMinutes && (
+            <p className="text-xs text-red-400 mt-1">{errors.manualTimeMinutes}</p>
           )}
         </div>
 

@@ -29,7 +29,7 @@ export default function DebugPage() {
             // 3. Check Automations
             const automationsResult = await supabase
                 .from('automations')
-                .select('id, name, n8n_workflow_id, seconds_saved_per_execution, hourly_rate')
+                .select('id, name, workflow_id, seconds_saved_per_execution, hourly_rate')
                 .limit(5);
 
             setData({

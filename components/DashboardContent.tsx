@@ -13,7 +13,7 @@ import { formatCurrency } from "@/lib/utils";
 
 interface ErrorExecution {
   id: string;
-  n8n_workflow_id: string;
+  workflow_id: string;
   workflow_name?: string | null;
   status: string;
   created_at: string;

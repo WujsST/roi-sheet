@@ -17,8 +17,8 @@ export default function LogsClient({ initialLogs }: LogsClientProps) {
   const filteredLogs = initialLogs.filter((log) => {
     const matchesSearch =
       (log.workflow_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.n8n_workflow_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.n8n_execution_id.toLowerCase().includes(searchTerm.toLowerCase());
+      (log.workflow_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (log.execution_id || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === "all" || log.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -157,7 +157,7 @@ export default function LogsClient({ initialLogs }: LogsClientProps) {
                         {log.workflow_name || 'Nieznany workflow'}
                       </div>
                       <div className="text-text-muted text-[10px]">
-                        ID: {log.n8n_workflow_id.substring(0, 12)}...
+                        ID: {(log.workflow_id || '').substring(0, 12)}...
                       </div>
                     </td>
                     <td className="py-4 px-4">

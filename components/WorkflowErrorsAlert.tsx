@@ -7,7 +7,7 @@ import { pl } from "date-fns/locale";
 
 interface ErrorExecution {
     id: string;
-    n8n_workflow_id: string;
+    workflow_id: string;
     workflow_name?: string | null;
     status: string;
     created_at: string;
@@ -79,7 +79,7 @@ export function WorkflowErrorsAlert({ errors, onRefresh }: WorkflowErrorsAlertPr
                         <div className="h-2 w-2 mt-1.5 rounded-full bg-red-500 flex-shrink-0"></div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-white truncate">
-                                {error.workflow_name || `Workflow ${error.n8n_workflow_id?.slice(0, 8)}...`}
+                                {error.workflow_name || `Workflow ${error.workflow_id?.slice(0, 8)}...`}
                             </p>
                             <div className="flex items-center gap-2 mt-1 text-xs text-text-muted font-mono">
                                 <Clock className="h-3 w-3" />

@@ -40,13 +40,88 @@ export async function getAutomationsData() {
 
 export async function getClientsData() {
   const supabase = await createClient()
+
+  // Join clients table with clients_dashboard view for combined data
   const { data, error } = await supabase
     .from('clients')
-    .select('*')
-    .order('saved_amount', { ascending: false })
+    .select(`
+      id,
+      name,
+      industry,
+      status,
+      logo,
+      created_at
+    `)
+    .order('created_at', { ascending: false })
 
   if (error) throw error
-  return data as Client[]
+
+  // Get stats for each client from clients_dashboard view
+  const clientIds = (data || []).map(c => c.id)
+
+  if (clientIds.length === 0) {
+    return []
+  }
+
+  const { data: statsData, error: statsError } = await supabase
+    .from('clients_dashboard')
+    .select('*')
+    .in('client_id', clientIds)
+
+  if (statsError) throw statsError
+
+  // Get automations ROI for each client
+  const { data: automationsData, error: automationsError } = await supabase
+    .from('automations_dashboard')
+    .select('client_id, roi_percentage, monthly_cost_pln')
+    .in('client_id', clientIds)
+
+  if (automationsError) throw automationsError
+
+  // Create maps for stats and ROI by client_id
+  const statsMap = new Map(
+    (statsData || []).map(s => [s.client_id, s])
+  )
+
+  // Calculate average ROI per client
+  const roiMap = new Map<string, number>()
+  const automationsByClient = new Map<string, typeof automationsData>()
+
+  for (const auto of (automationsData || [])) {
+    if (!automationsByClient.has(auto.client_id)) {
+      automationsByClient.set(auto.client_id, [])
+    }
+    automationsByClient.get(auto.client_id)!.push(auto)
+  }
+
+  for (const [clientId, autos] of automationsByClient.entries()) {
+    // Only include automations with valid ROI (monthly_cost_pln > 0 and roi_percentage != null)
+    const validRois = autos.filter(a =>
+      a.roi_percentage != null &&
+      a.monthly_cost_pln != null &&
+      a.monthly_cost_pln > 0
+    )
+
+    if (validRois.length > 0) {
+      const avgRoi = validRois.reduce((sum, a) => sum + (a.roi_percentage || 0), 0) / validRois.length
+      roiMap.set(clientId, Math.round(avgRoi))
+    } else {
+      roiMap.set(clientId, 0)
+    }
+  }
+
+  // Merge clients with their stats and ROI
+  return (data || []).map(client => {
+    const stats = statsMap.get(client.id)
+    const roi = roiMap.get(client.id) || 0
+
+    return {
+      ...client,
+      automations_count: stats?.automations_count || 0,
+      saved_amount: stats?.money_saved_pln_total || 0,
+      roi_percentage: roi
+    } as Client
+  })
 }
 
 export async function getReportsData() {
@@ -77,8 +152,26 @@ export async function deleteReport(reportId: string) {
 
 export async function getApiKey() {
   const supabase = await createClient()
-  const { data } = await supabase.from('app_settings').select('value').eq('key', 'api_key').single()
-  return data?.value || 'roi_live_not_set'
+
+  // Authenticate user
+  const { userId } = await auth()
+  if (!userId) return 'roi_live_not_authenticated'
+
+  // Get the most recent active API key for this user
+  const { data } = await supabase
+    .from('api_keys')
+    .select('key_hash, key_prefix')
+    .eq('created_by', userId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!data) return 'roi_live_not_set'
+
+  // Return the full key hash (which is what we store in plain text for now)
+  // In production, this would return key_prefix only for display
+  return data.key_hash || 'roi_live_not_set'
 }
 
 export async function generateNewApiKey() {
@@ -94,15 +187,25 @@ export async function generateNewApiKey() {
     .join('').substring(0, 32);
 
   const newKey = `roi_live_ak_${randomPart}`
+  const keyPrefix = newKey.substring(0, 12) // First 12 chars for display
 
+  // Deactivate all previous keys for this user
+  await supabase
+    .from('api_keys')
+    .update({ is_active: false })
+    .eq('created_by', userId)
+
+  // Insert new API key
   const { error } = await supabase
-    .from('app_settings')
-    .upsert({
-      user_id: userId,
-      key: 'api_key',
-      value: newKey,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id, key' })
+    .from('api_keys')
+    .insert({
+      key_name: 'Default API Key',
+      key_hash: newKey, // In production, use bcrypt/argon2 hashing
+      key_prefix: keyPrefix,
+      is_active: true,
+      created_by: userId,
+      created_at: new Date().toISOString()
+    })
 
   if (error) throw error
   return newKey
@@ -111,8 +214,8 @@ export async function generateNewApiKey() {
 // Execution Log type for logs page
 export interface ExecutionLog {
   id: string
-  n8n_execution_id: string
-  n8n_workflow_id: string
+  execution_id: string
+  workflow_id: string
   status: 'success' | 'error' | 'running' | 'waiting'
   mode: string
   finished: boolean
@@ -137,15 +240,15 @@ export async function getLogsData(): Promise<ExecutionLog[]> {
   // Get automation names for workflow IDs
   const { data: automations } = await supabase
     .from('automations')
-    .select('n8n_workflow_id, name')
+    .select('workflow_id, name')
 
   const automationMap = new Map(
-    automations?.map(a => [a.n8n_workflow_id, a.name]) || []
+    automations?.map(a => [a.workflow_id, a.name]) || []
   )
 
   return (executions || []).map(e => ({
     ...e,
-    workflow_name: automationMap.get(e.n8n_workflow_id) || null
+    workflow_name: automationMap.get(e.workflow_id) || null
   })) as ExecutionLog[]
 }
 
@@ -190,7 +293,7 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
     .gte('created_at', today)
 
   // DEBUG LOGGING
-  const { data: debugExecutions } = await supabase.from('executions_raw').select('id, created_at, n8n_workflow_id').limit(5);
+  const { data: debugExecutions } = await supabase.from('executions_raw').select('id, created_at, workflow_id').limit(5);
   console.log('[DEBUG] Recent executions:', debugExecutions);
   console.log('[DEBUG] Active automations:', activeAutomations);
   console.log('[DEBUG] Today executions count:', todayExecutions);
@@ -212,16 +315,25 @@ export async function getComputedDashboardStats(): Promise<ComputedDashboardStat
 export async function getClientReportData(clientId: string) {
   const supabase = await createClient()
 
-  // 1. Get Client Details & Aggregated Stats
-  const { data: clientData, error: clientError } = await supabase
+  // 1. Get Client Details from clients table (for industry, logo, etc.)
+  const { data: staticClient, error: staticError } = await supabase
+    .from('clients')
+    .select('*')
+    .eq('id', clientId)
+    .single()
+
+  if (staticError) throw staticError
+
+  // 2. Get Aggregated Stats from clients_dashboard view
+  const { data: clientStats, error: statsError } = await supabase
     .from('clients_dashboard')
     .select('*')
     .eq('client_id', clientId)
     .single()
 
-  if (clientError) throw clientError
+  if (statsError) throw statsError
 
-  // 2. Get Weekly Chart Data (Real Data via RPC)
+  // 3. Get Weekly Chart Data (Real Data via RPC)
   const now = new Date()
   const { data: chartData, error: chartError } = await supabase
     .rpc('get_monthly_savings_chart', {
@@ -232,7 +344,7 @@ export async function getClientReportData(clientId: string) {
 
   if (chartError) throw chartError
 
-  // 3. Get Top Automations
+  // 4. Get Top Automations with ROI data
   const { data: topAutomations, error: automationsError } = await supabase
     .from('automations_dashboard')
     .select('*')
@@ -242,10 +354,34 @@ export async function getClientReportData(clientId: string) {
 
   if (automationsError) throw automationsError
 
+  // 5. Calculate average ROI percentage from automations
+  const activeAutomations = (topAutomations || []).filter(a => a.roi_percentage != null && a.roi_percentage > 0)
+  const avgRoi = activeAutomations.length > 0
+    ? activeAutomations.reduce((sum, a) => sum + (a.roi_percentage || 0), 0) / activeAutomations.length
+    : 0
+
+  // 6. Map to expected interface with correct field names
   return {
-    client: clientData,
-    trends: chartData, // Corrected variable name
-    automations: topAutomations
+    client: {
+      client_id: clientId,
+      client_name: staticClient.name,
+      client_industry: staticClient.industry || 'Nieznana',
+      total_automations: clientStats.automations_count || 0,
+      total_executions: clientStats.executions_count || 0,
+      total_savings_pln: clientStats.money_saved_pln_total || 0,
+      total_hours_saved: Math.round(clientStats.saved_hours_total || 0),
+      avg_roi_percentage: Math.round(avgRoi)
+    },
+    trends: (chartData || []).map((t: any) => ({
+      week_label: t.week_label,
+      total_savings: Number(t.money_saved_pln || 0)
+    })),
+    automations: (topAutomations || []).map(a => ({
+      id: a.id,
+      name: a.name,
+      executions_count: a.executions_count || 0,
+      money_saved_pln: a.money_saved_pln || 0
+    }))
   }
 }
 
@@ -341,6 +477,8 @@ export async function createNewAutomation(data: {
   hourlyRate: number
   workflowId: string
   clientIds: string[]
+  manualTimeMinutes?: number
+  automationTimeSeconds?: number
 }) {
   const supabase = await createClient()
 
@@ -356,12 +494,14 @@ export async function createNewAutomation(data: {
     name: validated.name,
     icon: validated.icon,
     hourly_rate: validated.hourlyRate,
-    n8n_workflow_id: validated.workflowId, // Changed from workflow_id to match DB schema
+    workflow_id: validated.workflowId, // Changed from workflow_id to match DB schema
     client_id: clientId,
     client_name: '', // Will be filled by database trigger or view
     status: 'healthy' as const,
     saved_today: 0,
-    user_id: userId
+    user_id: userId,
+    manual_time_per_execution_seconds: (validated.manualTimeMinutes ?? 5) * 60,
+    automation_time_per_execution_seconds: validated.automationTimeSeconds ?? 30
   }))
 
   const { data: result, error } = await supabase
@@ -597,14 +737,14 @@ export async function getErrorExecutions() {
   // Get automation names
   const { data: automations } = await supabase
     .from('automations')
-    .select('n8n_workflow_id, name')
+    .select('workflow_id, name')
 
   const automationMap = new Map(
-    automations?.map(a => [a.n8n_workflow_id, a.name]) || []
+    automations?.map(a => [a.workflow_id, a.name]) || []
   )
 
   return (errors || []).map(e => ({
     ...e,
-    workflow_name: automationMap.get(e.n8n_workflow_id) || null
+    workflow_name: automationMap.get(e.workflow_id) || null
   }))
 }
