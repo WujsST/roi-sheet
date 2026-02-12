@@ -13,5 +13,6 @@ export const automationSchema = z.object({
   hourlyRate: z.number().min(0, 'Stawka musi być >= 0').max(10000),
   workflowId: z.string().min(1, 'Workflow ID jest wymagane'),
   clientIds: z.array(z.string().uuid()).min(1, 'Wybierz przynajmniej jednego klienta'),
-  manualTimeMinutes: z.number().min(1, 'Czas manualny musi być > 0').max(480).optional().default(5)
+  manualTimeMinutes: z.number().min(1, 'Czas manualny musi być > 0').max(480).optional(),
+  automationTimeSeconds: z.number().min(1, 'Czas automatyzacji musi być > 0').max(3600).optional()
 })

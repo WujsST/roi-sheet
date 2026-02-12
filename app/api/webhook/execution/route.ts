@@ -14,7 +14,7 @@ const webhookSchema = z.object({
   started_at: z.string().datetime().optional(),
   finished_at: z.string().datetime().optional(),
   execution_time_ms: z.number().int().positive().optional(),
-  metadata: z.record(z.any()).optional().default({})
+  metadata: z.record(z.string(), z.any()).optional().default({})
 })
 
 type WebhookPayload = z.infer<typeof webhookSchema>
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Validation failed',
-          details: parseResult.error.errors.map(err => ({
+          details: parseResult.error.issues.map(err => ({
             field: err.path.join('.'),
             message: err.message
           }))
