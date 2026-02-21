@@ -37,6 +37,12 @@ export function EditAutomationModal({
     const [manualTimeMinutes, setManualTimeMinutes] = useState(
         String(Math.round((automation.manual_time_per_execution_seconds ?? 300) / 60))
     )
+    const [monthlyCost, setMonthlyCost] = useState(
+        String(automation.monthly_cost_pln ?? 0)
+    )
+    const [initialInvestment, setInitialInvestment] = useState(
+        String(automation.initial_investment_pln ?? 0)
+    )
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     useEffect(() => {
@@ -46,6 +52,8 @@ export function EditAutomationModal({
             setHourlyRate(String(automation.hourly_rate || 0))
             setSource(automation.source || 'n8n')
             setManualTimeMinutes(String(Math.round((automation.manual_time_per_execution_seconds ?? 300) / 60)))
+            setMonthlyCost(String(automation.monthly_cost_pln ?? 0))
+            setInitialInvestment(String(automation.initial_investment_pln ?? 0))
         }
     }, [isOpen, automation])
 
@@ -73,7 +81,9 @@ export function EditAutomationModal({
             const minutes = parseInt(manualTimeMinutes) || 0
             await updateAutomation(automation.id, {
                 hourly_rate: rate,
-                manual_time_per_execution_seconds: minutes * 60
+                manual_time_per_execution_seconds: minutes * 60,
+                monthly_cost_pln: parseFloat(monthlyCost) || 0,
+                initial_investment_pln: parseFloat(initialInvestment) || 0
             })
 
             onSuccess?.()
@@ -202,6 +212,44 @@ export function EditAutomationModal({
                         />
                         <p className="mt-1 text-xs text-text-muted font-mono">
                             Ile minut trwałoby zrobienie tego ręcznie?
+                        </p>
+                    </div>
+
+                    {/* Monthly Cost */}
+                    <div>
+                        <label className="mb-2 flex items-center gap-2 text-sm font-bold text-white uppercase tracking-wider">
+                            <DollarSign className="h-4 w-4 text-text-muted" />
+                            Koszt Miesięczny (PLN)
+                        </label>
+                        <input
+                            type="text"
+                            inputMode="decimal"
+                            value={monthlyCost}
+                            onChange={(e) => setMonthlyCost(e.target.value)}
+                            placeholder="0"
+                            className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-3 text-white placeholder-white/20 outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all font-mono"
+                        />
+                        <p className="mt-1 text-xs text-text-muted font-mono">
+                            Miesięczny koszt utrzymania automatyzacji
+                        </p>
+                    </div>
+
+                    {/* Initial Investment */}
+                    <div>
+                        <label className="mb-2 flex items-center gap-2 text-sm font-bold text-white uppercase tracking-wider">
+                            <DollarSign className="h-4 w-4 text-text-muted" />
+                            Inwestycja Początkowa (PLN)
+                        </label>
+                        <input
+                            type="text"
+                            inputMode="decimal"
+                            value={initialInvestment}
+                            onChange={(e) => setInitialInvestment(e.target.value)}
+                            placeholder="0"
+                            className="w-full rounded-xl border border-white/10 bg-black/40 px-5 py-3 text-white placeholder-white/20 outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-all font-mono"
+                        />
+                        <p className="mt-1 text-xs text-text-muted font-mono">
+                            Jednorazowa opłata za setup/tworzenie automatyzacji
                         </p>
                     </div>
 

@@ -31,6 +31,8 @@ export function AddAutomationModal({ isOpen, onClose, onSuccess, availableClient
     name: '',
     icon: '',
     hourlyRate: 150,
+    monthlyCost: 0,
+    initialInvestment: 0,
     workflowId: '',
     clientIds: [] as string[],
     manualTimeMinutes: 5
@@ -72,7 +74,7 @@ export function AddAutomationModal({ isOpen, onClose, onSuccess, availableClient
       await createNewAutomation(formData)
 
       // Reset and close
-      setFormData({ name: '', icon: '', hourlyRate: 150, workflowId: '', clientIds: [], manualTimeMinutes: 5 })
+      setFormData({ name: '', icon: '', hourlyRate: 150, monthlyCost: 0, initialInvestment: 0, workflowId: '', clientIds: [], manualTimeMinutes: 5 })
       setErrors({})
       onSuccess()
       onClose()
@@ -156,6 +158,48 @@ export function AddAutomationModal({ isOpen, onClose, onSuccess, availableClient
           />
           {errors.hourlyRate && (
             <p className="text-xs text-red-400 mt-1">{errors.hourlyRate}</p>
+          )}
+        </div>
+
+        {/* Monthly Cost */}
+        <div>
+          <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+            Koszt Miesięczny (PLN)
+          </label>
+          <input
+            type="number"
+            min="0"
+            max="100000"
+            step="0.01"
+            value={formData.monthlyCost}
+            onChange={(e) => handleChange('monthlyCost', parseFloat(e.target.value) || 0)}
+            className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors"
+            placeholder="0"
+          />
+          <p className="text-xs text-text-muted mt-1">Miesięczny koszt utrzymania (subskrypcje, API)</p>
+          {errors.monthlyCost && (
+            <p className="text-xs text-red-400 mt-1">{errors.monthlyCost}</p>
+          )}
+        </div>
+
+        {/* Initial Investment */}
+        <div>
+          <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+            Inwestycja Początkowa (PLN)
+          </label>
+          <input
+            type="number"
+            min="0"
+            max="1000000"
+            step="0.01"
+            value={formData.initialInvestment}
+            onChange={(e) => handleChange('initialInvestment', parseFloat(e.target.value) || 0)}
+            className="w-full rounded-xl border border-white/10 bg-[#111] px-4 py-3 text-white outline-none focus:border-brand-accent transition-colors"
+            placeholder="0"
+          />
+          <p className="text-xs text-text-muted mt-1">Jednorazowa opłata za setup automatyzacji</p>
+          {errors.initialInvestment && (
+            <p className="text-xs text-red-400 mt-1">{errors.initialInvestment}</p>
           )}
         </div>
 

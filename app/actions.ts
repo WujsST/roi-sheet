@@ -475,6 +475,8 @@ export async function createNewAutomation(data: {
   name: string
   icon: string
   hourlyRate: number
+  monthlyCost?: number
+  initialInvestment?: number
   workflowId: string
   clientIds: string[]
   manualTimeMinutes?: number
@@ -494,6 +496,8 @@ export async function createNewAutomation(data: {
     name: validated.name,
     icon: validated.icon,
     hourly_rate: validated.hourlyRate,
+    monthly_cost_pln: validated.monthlyCost ?? 0,
+    initial_investment_pln: validated.initialInvestment ?? 0,
     workflow_id: validated.workflowId, // Changed from workflow_id to match DB schema
     client_id: clientId,
     client_name: '', // Will be filled by database trigger or view
@@ -696,6 +700,8 @@ export async function updateAutomation(
   automationId: string,
   data: {
     hourly_rate?: number
+    monthly_cost_pln?: number
+    initial_investment_pln?: number
     manual_time_per_execution_seconds?: number
     automation_time_per_execution_seconds?: number
     source?: string

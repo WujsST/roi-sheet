@@ -34,6 +34,8 @@ function NewAutomationContent() {
     client: "",
     category: "",
     hourlyRate: 100,
+    monthlyCost: 0,
+    initialInvestment: 0,
   });
 
   useEffect(() => {
@@ -74,6 +76,8 @@ function NewAutomationContent() {
         name: formData.name,
         icon: iconMap[formData.category] || 'Zap',
         hourlyRate: formData.hourlyRate,
+        monthlyCost: formData.monthlyCost,
+        initialInvestment: formData.initialInvestment,
         workflowId: workflowId,
         clientIds: [selectedClientId]
       });
@@ -265,22 +269,61 @@ function NewAutomationContent() {
               </div>
             )}
 
-            {/* Step 3: Value */}
+            {/* Step 3: Value & Costs */}
             {currentStep === 2 && (
-              <div className="flex flex-col items-center justify-center py-10">
-                <label className="mb-8 block text-lg font-bold text-white uppercase tracking-widest">Stawka Godzinowa</label>
-                <div className="relative w-full max-w-xs group">
-                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-accent font-bold font-mono">PLN</span>
-                  <input
-                    type="number"
-                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-6 py-8 pl-16 text-center text-5xl font-bold text-white outline-none focus:border-brand-accent transition-all font-display"
-                    value={formData.hourlyRate}
-                    onChange={(e) => setFormData({ ...formData, hourlyRate: Number(e.target.value) })}
-                  />
+              <div className="flex flex-col items-center justify-center py-10 space-y-12">
+                {/* Hourly Rate */}
+                <div className="w-full">
+                  <label className="mb-8 block text-lg font-bold text-white uppercase tracking-widest text-center">Stawka Godzinowa</label>
+                  <div className="relative w-full max-w-xs group mx-auto">
+                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-accent font-bold font-mono">PLN</span>
+                    <input
+                      type="number"
+                      className="w-full rounded-2xl border border-white/10 bg-black/40 px-6 py-8 pl-16 text-center text-5xl font-bold text-white outline-none focus:border-brand-accent transition-all font-display"
+                      value={formData.hourlyRate}
+                      onChange={(e) => setFormData({ ...formData, hourlyRate: Number(e.target.value) })}
+                    />
+                  </div>
+                  <p className="mt-4 text-sm text-text-muted font-mono uppercase tracking-wide text-center">
+                    Używane do obliczania oszczędności
+                  </p>
                 </div>
-                <p className="mt-8 text-sm text-text-muted font-mono uppercase tracking-wide">
-                  Używane do obliczania całkowitych oszczędności
-                </p>
+
+                {/* Monthly Cost */}
+                <div className="w-full">
+                  <label className="mb-4 block text-sm font-bold text-white uppercase tracking-widest text-center">Koszt Miesięczny (opcjonalne)</label>
+                  <div className="relative w-full max-w-xs group mx-auto">
+                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-yellow-500 font-bold font-mono text-sm">PLN</span>
+                    <input
+                      type="number"
+                      placeholder="100"
+                      className="w-full rounded-2xl border border-white/10 bg-black/40 px-6 py-4 pl-16 text-center text-2xl font-bold text-white outline-none focus:border-brand-accent transition-all font-display"
+                      value={formData.monthlyCost || ''}
+                      onChange={(e) => setFormData({ ...formData, monthlyCost: Number(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-text-muted font-mono tracking-wide text-center">
+                    Subskrypcje, hosting (n8n, Zapier, Make)
+                  </p>
+                </div>
+
+                {/* Initial Investment */}
+                <div className="w-full">
+                  <label className="mb-4 block text-sm font-bold text-white uppercase tracking-widest text-center">Początkowa Inwestycja (opcjonalne)</label>
+                  <div className="relative w-full max-w-xs group mx-auto">
+                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-purple-500 font-bold font-mono text-sm">PLN</span>
+                    <input
+                      type="number"
+                      placeholder="5000"
+                      className="w-full rounded-2xl border border-white/10 bg-black/40 px-6 py-4 pl-16 text-center text-2xl font-bold text-white outline-none focus:border-brand-accent transition-all font-display"
+                      value={formData.initialInvestment || ''}
+                      onChange={(e) => setFormData({ ...formData, initialInvestment: Number(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-text-muted font-mono tracking-wide text-center">
+                    Ile klient zapłacił za stworzenie automatyzacji
+                  </p>
+                </div>
               </div>
             )}
 

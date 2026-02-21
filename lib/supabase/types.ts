@@ -12,6 +12,7 @@ export interface Automation {
   // New ROI fields from simplified schema
   seconds_saved_per_execution?: number
   monthly_cost_pln?: number
+  initial_investment_pln?: number  // NEW: One-time payment from client for setup
   executions_count?: number
   saved_hours?: number
   money_saved_pln?: number
@@ -22,6 +23,10 @@ export interface Automation {
   automation_time_per_execution_seconds?: number
   // Technology/platform source
   source?: string
+  // NEW: Calculated fields from automations_dashboard view
+  months_elapsed?: number          // Time since creation in months
+  total_cost_pln?: number          // Initial investment + cumulative monthly costs
+  breakeven_months?: number        // When ROI reaches 0% (payback period)
 }
 
 export interface SavingsHistory {
@@ -117,12 +122,16 @@ export interface AutomationDashboard {
   hourly_rate: number
   seconds_saved_per_execution: number
   monthly_cost_pln: number
+  initial_investment_pln: number  // NEW: One-time payment from client
   created_at: string
   executions_count: number
   saved_seconds: number
   saved_hours: number
   money_saved_pln: number
+  months_elapsed: number          // NEW: Time since creation in months
+  total_cost_pln: number          // NEW: Initial + cumulative monthly costs
   roi_percentage: number | null
+  breakeven_months: number | null // NEW: Payback period in months
   last_run_at: string | null
   saved_today: number
 }
