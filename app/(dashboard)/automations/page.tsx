@@ -12,6 +12,7 @@ import type { Automation, Client } from "@/lib/supabase/types";
 import { AddAutomationModal } from "@/components/modals/AddAutomationModal"
 import { EditAutomationModal } from "@/components/modals/EditAutomationModal"
 import { UnnamedWorkflowAlert } from "@/components/UnnamedWorkflowAlert"
+import { ClientAutomationsAccordion } from "@/components/ClientAutomationsAccordion"
 
 // Icon mapping helper
 const getIconComponent = (iconName: string | null) => {
@@ -65,6 +66,125 @@ export default function AutomationsPage() {
     setSelectedAutomation(automation)
     setIsEditModalOpen(true)
   }
+
+  const renderAutomationCard = (item: Automation) => {
+    const IconComponent = getIconComponent(item.icon);
+    const uptimePercent = item.status === 'healthy' ? 99 : item.status === 'error' ? 85 : 0;
+    return (
+      <div
+        key={item.id}
+        onClick={() => handleCardClick(item)}
+        className="group relative flex items-center justify-between rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 transition-all hover:border-brand-accent/50 hover:bg-[#0f0f0f] cursor-pointer"
+      >
+        {/* Left: Icon & Info */}
+        <div className="flex items-center gap-6">
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/5 text-white border border-white/10 group-hover:bg-brand-accent/10 group-hover:border-brand-accent/20 transition-colors">
+            <IconComponent className="h-6 w-6" />
+          </div>
+          <div>
+            <div className="font-bold text-white font-display text-lg tracking-tight mb-1 group-hover:text-brand-accent transition-colors">{item.name}</div>
+            <div className="flex items-center gap-3 text-xs font-mono text-text-muted">
+              {item.workflow_id && (
+                <span
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 cursor-pointer hover:border-brand-accent/40"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(item.workflow_id || '');
+                  }}
+                  title={`Kliknij aby skopiować: ${item.workflow_id}`}
+                >
+                  <span className="text-text-muted">ID:</span>
+                  <span className="text-white/70">{item.workflow_id.substring(0, 10)}…</span>
+                </span>
+              )}
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> {item.client_name || 'Brak klienta'}
+              </span>
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-brand-accent/10 border border-brand-accent/20">
+                <DollarSign className="h-3 w-3 text-brand-accent" />
+                <span className="text-brand-accent font-semibold">{item.hourly_rate} PLN/h</span>
+              </span>
+              {item.roi_percentage !== undefined && item.roi_percentage !== null && (
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/20">
+                  <TrendingUp className="h-3 w-3 text-green-500" />
+                  <span className="text-green-500 font-semibold">ROI: {item.roi_percentage.toFixed(0)}%</span>
+                </span>
+              )}
+              {item.executions_count !== undefined && item.saved_hours !== undefined && (
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" />
+                  {item.executions_count} exec • {item.saved_hours.toFixed(1)}h
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Metrics & Status */}
+        <div className="flex items-center gap-8">
+          <div className="hidden md:block w-32">
+            <div className="flex justify-between text-[10px] font-mono text-text-muted mb-1 uppercase tracking-wider">
+              <span>Health</span>
+              <span>{uptimePercent > 0 ? `${uptimePercent}%` : '-'}</span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
+              <div
+                className={cn("h-full rounded-full",
+                  item.status === "healthy" ? "bg-green-500" :
+                    item.status === "error" ? "bg-red-500" :
+                      "bg-gray-500"
+                )}
+                style={{ width: `${uptimePercent}%` }}
+              ></div>
+            </div>
+          </div>
+
+          <div className="w-28 text-right">
+            {item.status === "healthy" ? (
+              <>
+                <div className="text-lg font-bold text-brand-success font-display">
+                  {(item.money_saved_pln || 0).toFixed(0)} PLN
+                </div>
+                <div className="text-[10px] text-brand-success/70 font-mono uppercase tracking-wider flex items-center justify-end gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Healthy
+                </div>
+              </>
+            ) : item.status === "error" ? (
+              <>
+                <div className="text-lg font-bold text-brand-warning flex items-center gap-1 justify-end font-display">
+                  Error
+                </div>
+                <div className="text-[10px] text-brand-warning/70 font-mono uppercase tracking-wider flex items-center justify-end gap-1">
+                  <AlertCircle className="h-3 w-3" /> Check Logs
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-lg font-bold text-text-muted font-display">Paused</div>
+                <div className="text-[10px] text-text-muted/70 font-mono uppercase tracking-wider">Inactive</div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Group automations by client_id; unassigned go to the end
+  const grouped = new Map<string, { name: string; items: Automation[] }>();
+  const unassigned: Automation[] = [];
+  for (const a of automations) {
+    if (!a.client_id) {
+      unassigned.push(a);
+      continue;
+    }
+    const slot = grouped.get(a.client_id) || { name: a.client_name || 'Bez nazwy', items: [] };
+    slot.items.push(a);
+    grouped.set(a.client_id, slot);
+  }
+  const clientGroups = Array.from(grouped.entries()).sort((a, b) =>
+    a[1].name.localeCompare(b[1].name, 'pl')
+  );
 
   return (
     <div className="space-y-8 pb-20">
@@ -159,101 +279,27 @@ export default function AutomationsPage() {
         </div>
       )}
 
-      {/* Automations List */}
+      {/* Automations List — grouped by client (accordions) */}
       {!error && automations.length > 0 && (
-        <div className="space-y-3">
-          {automations.map((item) => {
-            const IconComponent = getIconComponent(item.icon);
-            const uptimePercent = item.status === 'healthy' ? 99 : item.status === 'error' ? 85 : 0;
-
-            return (
-              <div
-                key={item.id}
-                onClick={() => handleCardClick(item)}
-                className="group relative flex items-center justify-between rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 transition-all hover:border-brand-accent/50 hover:bg-[#0f0f0f] cursor-pointer"
-              >
-                {/* Left: Icon & Info */}
-                <div className="flex items-center gap-6">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/5 text-white border border-white/10 group-hover:bg-brand-accent/10 group-hover:border-brand-accent/20 transition-colors">
-                    <IconComponent className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-white font-display text-lg tracking-tight mb-1 group-hover:text-brand-accent transition-colors">{item.name}</div>
-                    <div className="flex items-center gap-3 text-xs font-mono text-text-muted">
-                      <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/5 border border-white/5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span> {item.client_name || 'Brak klienta'}
-                      </span>
-                      <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-brand-accent/10 border border-brand-accent/20">
-                        <DollarSign className="h-3 w-3 text-brand-accent" />
-                        <span className="text-brand-accent font-semibold">{item.hourly_rate} PLN/h</span>
-                      </span>
-                      {item.roi_percentage !== undefined && item.roi_percentage !== null && (
-                        <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/20">
-                          <TrendingUp className="h-3 w-3 text-green-500" />
-                          <span className="text-green-500 font-semibold">ROI: {item.roi_percentage.toFixed(0)}%</span>
-                        </span>
-                      )}
-                      {item.executions_count !== undefined && item.saved_hours !== undefined && (
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="h-3 w-3" />
-                          {item.executions_count} exec • {item.saved_hours.toFixed(1)}h
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right: Metrics & Status */}
-                <div className="flex items-center gap-8">
-                  {/* Health Bar (Mini) */}
-                  <div className="hidden md:block w-32">
-                    <div className="flex justify-between text-[10px] font-mono text-text-muted mb-1 uppercase tracking-wider">
-                      <span>Health</span>
-                      <span>{uptimePercent > 0 ? `${uptimePercent}%` : '-'}</span>
-                    </div>
-                    <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
-                      <div
-                        className={cn("h-full rounded-full",
-                          item.status === "healthy" ? "bg-green-500" :
-                            item.status === "error" ? "bg-red-500" :
-                              "bg-gray-500"
-                        )}
-                        style={{ width: `${uptimePercent}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Status Badge */}
-                  <div className="w-28 text-right">
-                    {item.status === "healthy" ? (
-                      <>
-                        <div className="text-lg font-bold text-brand-success font-display">
-                          {(item.money_saved_pln || 0).toFixed(0)} PLN
-                        </div>
-                        <div className="text-[10px] text-brand-success/70 font-mono uppercase tracking-wider flex items-center justify-end gap-1">
-                          <CheckCircle2 className="h-3 w-3" /> Healthy
-                        </div>
-                      </>
-                    ) : item.status === "error" ? (
-                      <>
-                        <div className="text-lg font-bold text-brand-warning flex items-center gap-1 justify-end font-display">
-                          Error
-                        </div>
-                        <div className="text-[10px] text-brand-warning/70 font-mono uppercase tracking-wider flex items-center justify-end gap-1">
-                          <AlertCircle className="h-3 w-3" /> Check Logs
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-lg font-bold text-text-muted font-display">Paused</div>
-                        <div className="text-[10px] text-text-muted/70 font-mono uppercase tracking-wider">Inactive</div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        <div className="space-y-4">
+          {clientGroups.map(([clientId, group]) => (
+            <ClientAutomationsAccordion
+              key={clientId}
+              title={group.name}
+              automations={group.items}
+              defaultOpen={true}
+              renderCard={renderAutomationCard}
+            />
+          ))}
+          {unassigned.length > 0 && (
+            <ClientAutomationsAccordion
+              title="Nieprzypisane"
+              automations={unassigned}
+              defaultOpen={true}
+              variant="unassigned"
+              renderCard={renderAutomationCard}
+            />
+          )}
         </div>
       )}
 

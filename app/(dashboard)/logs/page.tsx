@@ -1,13 +1,17 @@
 import { Activity, AlertCircle } from "lucide-react";
-import { getLogsData, type ExecutionLog } from "@/app/actions";
+import { getLogsData, getClientsData, type ExecutionLog } from "@/app/actions";
+import type { Client } from "@/lib/supabase/types";
 import LogsClient from "./logs-client";
+
+export const dynamic = "force-dynamic";
 
 export default async function LogsPage() {
   let logs: ExecutionLog[] = [];
+  let clients: Client[] = [];
   let error: Error | null = null;
 
   try {
-    logs = await getLogsData();
+    [logs, clients] = await Promise.all([getLogsData(), getClientsData()]);
   } catch (e) {
     error = e as Error;
     console.error('Error fetching logs:', e);
@@ -40,7 +44,7 @@ export default async function LogsPage() {
       )}
 
       {/* Client component for interactive filtering */}
-      {!error && <LogsClient initialLogs={logs} />}
+      {!error && <LogsClient initialLogs={logs} clients={clients} />}
     </div>
   );
 }

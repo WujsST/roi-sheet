@@ -59,12 +59,43 @@ export interface Client {
 
 export interface Report {
   id: string
+  user_id: string
+  client_id: string | null
+  client_name: string | null
   title: string
-  client_name: string
-  period: string
-  file_size: string
+  period_from: string  // ISO date "YYYY-MM-DD"
+  period_to: string    // ISO date "YYYY-MM-DD"
   status: string
+  snapshot_data: ReportSnapshot
+  pdf_storage_path: string | null
   created_at: string
+}
+
+export interface ReportSnapshot {
+  client: {
+    client_id: string
+    client_name: string
+    client_industry: string
+    total_automations: number
+    total_executions: number
+    total_savings_pln: number
+    total_hours_saved: number
+    avg_roi_percentage: number
+    total_errors: number
+    error_rate: number  // 0..1
+  }
+  trends: Array<{ week_label: string; total_savings: number }>
+  automations: Array<{
+    id: string
+    name: string
+    executions_count: number
+    money_saved_pln: number
+    success_count: number
+    error_count: number
+    last_run_at: string | null
+  }>
+  range: { from: string; to: string }
+  generated_at: string
 }
 
 export interface SystemLog {

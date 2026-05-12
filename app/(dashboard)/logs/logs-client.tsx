@@ -5,23 +5,46 @@ import { Search, CheckCircle2, XCircle, Clock, Activity, Workflow } from "lucide
 import { format, formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import type { ExecutionLog } from "@/app/actions";
+import type { Client } from "@/lib/supabase/types";
 
 interface LogsClientProps {
   initialLogs: ExecutionLog[];
+  clients: Client[];
 }
 
-export default function LogsClient({ initialLogs }: LogsClientProps) {
+export default function LogsClient({ initialLogs, clients }: LogsClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterClient, setFilterClient] = useState<string>("all");
 
   const filteredLogs = initialLogs.filter((log) => {
     const matchesSearch =
       (log.workflow_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.workflow_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.execution_id || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === "all" || log.status === filterStatus;
-    return matchesSearch && matchesFilter;
+    const matchesStatus = filterStatus === "all" || log.status === filterStatus;
+    const matchesClient =
+      filterClient === "all" ||
+      (filterClient === "__unassigned__" ? !log.client_id : log.client_id === filterClient);
+    return matchesSearch && matchesStatus && matchesClient;
   });
+
+  // Per-client aggregation across the FULL initialLogs set (not filtered) — gives a stable overview
+  const perClientStats = (() => {
+    const byClient = new Map<string, { name: string; total: number; success: number; error: number }>();
+    for (const log of initialLogs) {
+      const id = log.client_id || '__unassigned__';
+      const name = log.client_name || 'Nieprzypisane';
+      const slot = byClient.get(id) || { name, total: 0, success: 0, error: 0 };
+      slot.total++;
+      if (log.status === 'success') slot.success++;
+      else if (log.status === 'error') slot.error++;
+      byClient.set(id, slot);
+    }
+    return Array.from(byClient.entries())
+      .map(([id, s]) => ({ id, ...s }))
+      .sort((a, b) => b.total - a.total);
+  })();
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -111,7 +134,48 @@ export default function LogsClient({ initialLogs }: LogsClientProps) {
           <option value="error">ERROR</option>
           <option value="running">RUNNING</option>
         </select>
+        <select
+          className="rounded-xl border border-white/10 bg-[#0f0f0f] px-4 py-3 text-sm text-white focus:border-white/30 outline-none font-mono cursor-pointer"
+          value={filterClient}
+          onChange={(e) => setFilterClient(e.target.value)}
+        >
+          <option value="all">Wszyscy klienci</option>
+          {clients.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+          <option value="__unassigned__">Nieprzypisane</option>
+        </select>
       </div>
+
+      {/* Per-Client Stats */}
+      {perClientStats.length > 0 && (
+        <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
+          <div className="text-xs text-text-muted font-mono uppercase tracking-wider mb-3">
+            Statystyki per Klient (ostatnie 100 egzekucji)
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {perClientStats.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setFilterClient(r.id)}
+                className={`text-left rounded-xl border p-3 transition-colors ${
+                  filterClient === r.id
+                    ? 'border-brand-accent/60 bg-brand-accent/5'
+                    : 'border-white/5 bg-black/30 hover:border-white/20'
+                }`}
+              >
+                <div className="font-bold text-white text-sm mb-2">{r.name}</div>
+                <div className="flex gap-3 text-xs font-mono">
+                  <span className="text-text-muted">Total: <span className="text-white">{r.total}</span></span>
+                  <span className="text-green-400">OK: {r.success}</span>
+                  <span className={r.error > 0 ? "text-red-400" : "text-text-muted"}>Err: {r.error}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Executions Table */}
       <div className="flex-1 rounded-2xl border border-white/10 bg-[#050505] overflow-hidden flex flex-col shadow-2xl">

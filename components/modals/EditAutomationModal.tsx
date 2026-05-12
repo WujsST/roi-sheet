@@ -122,6 +122,32 @@ export function EditAutomationModal({
                     </div>
                 </div>
 
+                {/* IDs — read-only, copyable */}
+                <div className="mb-6 grid grid-cols-1 gap-2 rounded-xl border border-white/5 bg-black/20 p-3 font-mono text-[10px]">
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-text-muted uppercase tracking-wider">ID rekordu</span>
+                        <button
+                            type="button"
+                            onClick={() => navigator.clipboard.writeText(automation.id)}
+                            title="Skopiuj"
+                            className="truncate text-white/80 hover:text-brand-accent transition-colors"
+                        >
+                            {automation.id}
+                        </button>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-text-muted uppercase tracking-wider">Workflow ID</span>
+                        <button
+                            type="button"
+                            onClick={() => automation.workflow_id && navigator.clipboard.writeText(automation.workflow_id)}
+                            title="Skopiuj"
+                            className="truncate text-white/80 hover:text-brand-accent transition-colors"
+                        >
+                            {automation.workflow_id || '— brak —'}
+                        </button>
+                    </div>
+                </div>
+
                 <form onSubmit={handleSubmit} className="space-y-5">
                     {/* Name */}
                     <div>
