@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Search, CheckCircle2, XCircle, Clock, Activity, Workflow } from "lucide-react";
+import { Search, CheckCircle2, XCircle, Clock, Activity, Workflow, Download } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 import type { ExecutionLog } from "@/app/actions";
 import type { Client } from "@/lib/supabase/types";
+import { downloadCsv } from "@/lib/export-csv";
 
 interface LogsClientProps {
   initialLogs: ExecutionLog[];
@@ -94,8 +95,59 @@ export default function LogsClient({ initialLogs, clients }: LogsClientProps) {
   const successCount = initialLogs.filter(l => l.status === 'success').length;
   const errorCount = initialLogs.filter(l => l.status === 'error').length;
 
+  const exportFilteredLogs = () => {
+    const ts = format(new Date(), 'yyyy-MM-dd-HHmm');
+    downloadCsv(
+      `logi-egzekucji-${ts}.csv`,
+      ['Czas', 'Status', 'Workflow', 'Workflow ID', 'Klient', 'Klient ID', 'Czas trwania (ms)', 'Execution ID'],
+      filteredLogs.map((log) => {
+        const durationMs = log.stopped_at
+          ? new Date(log.stopped_at).getTime() - new Date(log.started_at).getTime()
+          : null;
+        return [
+          formatTimestamp(log.started_at),
+          log.status,
+          log.workflow_name || '',
+          log.workflow_id,
+          log.client_name || '',
+          log.client_id || '',
+          durationMs,
+          log.execution_id,
+        ];
+      })
+    );
+  };
+
+  const exportPerClientStats = () => {
+    const ts = format(new Date(), 'yyyy-MM-dd-HHmm');
+    downloadCsv(
+      `statystyki-per-klient-${ts}.csv`,
+      ['Klient', 'Łącznie egzekucji', 'Sukces', 'Błędy', 'Error rate (%)'],
+      perClientStats.map((s) => [
+        s.name,
+        s.total,
+        s.success,
+        s.error,
+        s.total > 0 ? ((s.error / s.total) * 100).toFixed(1) : '0.0',
+      ])
+    );
+  };
+
   return (
     <>
+      {/* Stats Bar header + export */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-text-muted">Podsumowanie</h2>
+        <button
+          onClick={exportFilteredLogs}
+          disabled={filteredLogs.length === 0}
+          className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-[#0f0f0f] text-sm text-white hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed font-mono transition-colors"
+          title={filteredLogs.length === 0 ? 'Brak danych do eksportu' : `Eksportuj ${filteredLogs.length} egzekucji (zgodnie z filtrem)`}
+        >
+          <Download className="h-4 w-4" /> Eksport tabeli ({filteredLogs.length})
+        </button>
+      </div>
+
       {/* Stats Bar */}
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-4">
@@ -150,8 +202,17 @@ export default function LogsClient({ initialLogs, clients }: LogsClientProps) {
       {/* Per-Client Stats */}
       {perClientStats.length > 0 && (
         <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
-          <div className="text-xs text-text-muted font-mono uppercase tracking-wider mb-3">
-            Statystyki per Klient (ostatnie 100 egzekucji)
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs text-text-muted font-mono uppercase tracking-wider">
+              Statystyki per Klient (ostatnie 100 egzekucji)
+            </div>
+            <button
+              onClick={exportPerClientStats}
+              disabled={perClientStats.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/10 text-xs text-text-muted hover:text-white hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed font-mono transition-colors"
+            >
+              <Download className="h-3 w-3" /> CSV
+            </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {perClientStats.map((r) => (
