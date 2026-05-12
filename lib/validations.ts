@@ -1,5 +1,20 @@
 import { z } from 'zod'
 
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data musi być w formacie YYYY-MM-DD')
+
+export const dateRangeSchema = z
+  .object({
+    from: isoDate,
+    to: isoDate,
+  })
+  .refine((r) => r.from <= r.to, { message: 'Zakres dat: "od" musi być przed "do"' })
+
+export const reportGenerationSchema = z.object({
+  clientId: z.string().uuid('Nieprawidłowy clientId'),
+  from: isoDate,
+  to: isoDate,
+})
+
 export const clientSchema = z.object({
   name: z.string().min(1, 'Nazwa klienta jest wymagana').max(100),
   industry: z.string().optional(),
