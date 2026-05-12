@@ -8,25 +8,35 @@ import {
   Users,
   FileText,
   Settings,
-  LogOut,
-  ChevronRight,
-  ScrollText
+  ScrollText,
+  UserCog,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser, UserButton } from "@clerk/nextjs";
+import type { UserRole } from "@/lib/auth/role";
 
-const menuItems = [
+const adminMenuItems = [
   { name: "Dashboard", icon: LayoutGrid, href: "/" },
   { name: "Automatyzacje", icon: Workflow, href: "/automations" },
   { name: "Klienci", icon: Users, href: "/clients" },
   { name: "Logi", icon: ScrollText, href: "/logs" },
   { name: "Raporty", icon: FileText, href: "/reports" },
+  { name: "Użytkownicy", icon: UserCog, href: "/admin/users" },
   { name: "Ustawienia", icon: Settings, href: "/settings" },
 ];
 
-export function Sidebar() {
+const memberMenuItems = [
+  { name: "Moja Organizacja", icon: Building2, href: "/moja-organizacja" },
+  { name: "Raporty", icon: FileText, href: "/moja-organizacja/raporty" },
+  { name: "Automatyzacje", icon: Workflow, href: "/moja-organizacja/automatyzacje" },
+  { name: "Logi", icon: ScrollText, href: "/moja-organizacja/logi" },
+];
+
+export function Sidebar({ role = "admin" }: { role?: UserRole }) {
   const pathname = usePathname();
   const { user, isLoaded } = useUser();
+  const menuItems = role === "member" ? memberMenuItems : adminMenuItems;
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-border-subtle bg-bg-sidebar transition-transform max-md:-translate-x-full font-sans">

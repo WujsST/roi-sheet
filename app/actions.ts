@@ -8,7 +8,8 @@ import {
   dateRangeSchema,
 } from '@/lib/validations'
 import { revalidatePath } from 'next/cache'
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
+import { requireAdmin } from '@/lib/auth/role'
 import { defaultRange, toRangeISO, formatRangeLabel, type RangeISO } from '@/lib/date-range'
 import { parseISO, format } from 'date-fns'
 import { pl } from 'date-fns/locale'
@@ -817,4 +818,138 @@ export async function describeRangeShort(range: RangeISO): Promise<string> {
   const from = parseISO(range.from)
   const to = parseISO(range.to)
   return `${format(from, 'd LLL', { locale: pl })} – ${format(to, 'd LLL yyyy', { locale: pl })}`
+}
+
+// ============================================================================
+// Admin (Dawid-only) — lista Clerk userów + przypisywanie do klientów
+// ============================================================================
+
+export interface ClerkUserRow {
+  id: string
+  email: string | null
+  fullName: string | null
+  imageUrl: string
+  createdAt: string
+  /** Lista org IDs do których user należy (Clerk membership) */
+  orgIds: string[]
+  /** Lista nazw klientów (clients.name) do których jest przypisany przez clerk_org_id */
+  assignedClientNames: string[]
+}
+
+/**
+ * Lista wszystkich userów Clerk + ich przypisania do klientów-firm.
+ * Admin-only (sprawdzane przez requireAdmin).
+ */
+export async function listAllClerkUsers(): Promise<ClerkUserRow[]> {
+  await requireAdmin()
+
+  const clerk = await clerkClient()
+  const users = await clerk.users.getUserList({ limit: 200, orderBy: '-created_at' })
+
+  // Pobierz mapę clerk_org_id → client_name z Supabase (admin RLS umożliwia SELECT *)
+  const supabase = await createClient()
+  const { data: clients } = await supabase
+    .from('clients')
+    .select('clerk_org_id, name')
+    .not('clerk_org_id', 'is', null)
+  const orgToClientName = new Map<string, string>(
+    (clients || []).map((c) => [c.clerk_org_id as string, c.name as string]),
+  )
+
+  return Promise.all(
+    users.data.map(async (u) => {
+      const memberships = await clerk.users.getOrganizationMembershipList({ userId: u.id })
+      const orgIds = memberships.data.map((m) => m.organization.id)
+      const assignedClientNames = orgIds
+        .map((id) => orgToClientName.get(id))
+        .filter(Boolean) as string[]
+
+      return {
+        id: u.id,
+        email: u.emailAddresses[0]?.emailAddress || null,
+        fullName: [u.firstName, u.lastName].filter(Boolean).join(' ') || null,
+        imageUrl: u.imageUrl,
+        createdAt: new Date(u.createdAt).toISOString(),
+        orgIds,
+        assignedClientNames,
+      }
+    }),
+  )
+}
+
+/**
+ * Przypisuje Clerk usera do klienta-firmy poprzez:
+ *  1. Tworzy Clerk Organization dla tego klienta (jeśli jeszcze nie ma) i zapisuje org_id do clients.clerk_org_id
+ *  2. Dodaje usera jako member tej Organization
+ */
+export async function assignClerkUserToClient(input: {
+  clerkUserId: string
+  clientId: string
+}): Promise<{ orgId: string }> {
+  const admin = await requireAdmin()
+  const supabase = await createClient()
+
+  const { data: client, error: clientErr } = await supabase
+    .from('clients')
+    .select('id, name, clerk_org_id')
+    .eq('id', input.clientId)
+    .maybeSingle()
+  if (clientErr) throw clientErr
+  if (!client) throw new Error('Klient nie znaleziony')
+
+  const clerk = await clerkClient()
+  let orgId = (client.clerk_org_id as string | null) || null
+
+  if (!orgId) {
+    const slug = (client.name as string)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 50) || `klient-${input.clientId.slice(0, 8)}`
+
+    const org = await clerk.organizations.createOrganization({
+      name: client.name as string,
+      slug,
+      createdBy: admin.userId,
+    })
+    orgId = org.id
+
+    const { error: updateErr } = await supabase
+      .from('clients')
+      .update({ clerk_org_id: orgId })
+      .eq('id', input.clientId)
+    if (updateErr) throw updateErr
+  }
+
+  // Dodaj usera do org jako member (skip jeśli już jest)
+  try {
+    await clerk.organizations.createOrganizationMembership({
+      organizationId: orgId,
+      userId: input.clerkUserId,
+      role: 'org:member',
+    })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : ''
+    if (!msg.toLowerCase().includes('already')) throw err
+  }
+
+  revalidatePath('/admin/users')
+  revalidatePath('/clients')
+  return { orgId }
+}
+
+/**
+ * Cofa przypisanie usera do klienta — usuwa go z Clerk Organization.
+ */
+export async function unassignClerkUserFromClient(input: {
+  clerkUserId: string
+  orgId: string
+}): Promise<void> {
+  await requireAdmin()
+  const clerk = await clerkClient()
+  await clerk.organizations.deleteOrganizationMembership({
+    organizationId: input.orgId,
+    userId: input.clerkUserId,
+  })
+  revalidatePath('/admin/users')
 }
