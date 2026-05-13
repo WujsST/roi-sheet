@@ -1,6 +1,5 @@
 import { auth } from '@clerk/nextjs/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 
 export type UserRole = 'admin' | 'member' | 'unassigned'
 
@@ -17,31 +16,26 @@ export interface CurrentRole {
 /**
  * Wykrywa rolę aktualnie zalogowanego użytkownika Clerk.
  *
- * - `admin`  → user_id znajduje się w tabeli `admin_users` (server-side check przez RLS-protected query).
+ * - `admin`  → `is_admin()` RPC (SECURITY DEFINER → bypassuje RLS na admin_users).
  * - `member` → user ma aktywną Clerk Organization (`orgId` z `auth()`) powiązaną z rekordem `clients.clerk_org_id`.
  * - `unassigned` → zalogowany, ale nie admin i jego org (jeśli ma) nie jest powiązana z żadnym klientem.
  *
- * Wymaga że Clerk JWT template "supabase" zawiera claim `org_id` żeby `current_org_id()` w SQL też widział org.
+ * Wymaga że Clerk JWT template "supabase" zawiera claim `sub` (auto) i `org_id`.
  */
 export async function getCurrentRole(): Promise<CurrentRole> {
   const { userId, orgId } = await auth()
   if (!userId) throw new Error('Unauthorized')
 
-  // admin_users ma RLS `using (false)` — czytamy service-role'em (bypass RLS).
-  // To jest bezpieczne bo filtrujemy po `eq('user_id', userId)` z Clerka, nie z input usera.
-  const admin = createAdminClient()
-  const { data: adminRow } = await admin
-    .from('admin_users')
-    .select('user_id')
-    .eq('user_id', userId)
-    .maybeSingle()
+  const supabase = await createClient()
 
-  if (adminRow) {
+  // is_admin() = SECURITY DEFINER w SQL → bypassuje policy `admin_users using (false)`.
+  // Czyta auth.jwt() ->> 'sub', więc Clerk JWT (Authorization header) musi być valid.
+  const { data: isAdmin } = await supabase.rpc('is_admin')
+  if (isAdmin === true) {
     return { userId, role: 'admin', orgId: orgId || null, clientId: null, clientName: null }
   }
 
   if (orgId) {
-    const supabase = await createClient()
     const { data: client } = await supabase
       .from('clients')
       .select('id, name')
