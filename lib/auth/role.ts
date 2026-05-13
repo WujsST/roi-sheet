@@ -1,5 +1,6 @@
 import { auth } from '@clerk/nextjs/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export type UserRole = 'admin' | 'member' | 'unassigned'
 
@@ -26,9 +27,10 @@ export async function getCurrentRole(): Promise<CurrentRole> {
   const { userId, orgId } = await auth()
   if (!userId) throw new Error('Unauthorized')
 
-  const supabase = await createClient()
-
-  const { data: adminRow } = await supabase
+  // admin_users ma RLS `using (false)` — czytamy service-role'em (bypass RLS).
+  // To jest bezpieczne bo filtrujemy po `eq('user_id', userId)` z Clerka, nie z input usera.
+  const admin = createAdminClient()
+  const { data: adminRow } = await admin
     .from('admin_users')
     .select('user_id')
     .eq('user_id', userId)
@@ -39,6 +41,7 @@ export async function getCurrentRole(): Promise<CurrentRole> {
   }
 
   if (orgId) {
+    const supabase = await createClient()
     const { data: client } = await supabase
       .from('clients')
       .select('id, name')
